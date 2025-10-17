@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
- export default function DeliveryDashboard() {
+export default function DeliveryDashboard() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,9 +12,8 @@ import axios from "axios";
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-    // Set page title
-    document.title = "Delivery Dashboard - Management System";
-    
+    document.title = "Delivery Panel";
+
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || user.role !== "delivery") {
       navigate("/");
@@ -31,9 +30,7 @@ import axios from "axios";
       const res = await axios.get(`http://localhost:5000/api/orders/delivery/${deliveryPersonId}`);
       setOrders(res.data);
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message || "Unknown error occurred";
-      setError(`Failed to fetch orders: ${errorMessage}`);
-      console.error("Delivery orders fetch error:", err);
+      setError(`Failed to fetch orders: ${err.response?.data?.error || err.message || "Unknown error"}`);
     } finally {
       setLoading(false);
     }
@@ -43,38 +40,27 @@ import axios from "axios";
     try {
       setUpdating(true);
       setError(null);
-      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, {
-        status: newStatus
-      });
-      
-      // Refresh orders
+      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, { status: newStatus });
       const user = JSON.parse(localStorage.getItem("user"));
       await fetchOrders(user._id);
-      
       setSuccessMessage(`Order status updated to: ${getStatusText(newStatus)}`);
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message || "Unknown error occurred";
-      setError(`Failed to update order status: ${errorMessage}`);
-      console.error("Order status update error:", err);
+      setError(`Failed to update order status: ${err.response?.data?.error || err.message || "Unknown error"}`);
     } finally {
       setUpdating(false);
     }
   };
 
-  const filteredOrders = orders.filter(order => 
-    filterStatus === "all" || order.status === filterStatus
-  );
+  const filteredOrders = orders.filter(order => filterStatus === "all" || order.status === filterStatus);
 
-  const getOrderCount = (status) => {
-    return orders.filter(order => order.status === status).length;
-  };
+  const getOrderCount = (status) => orders.filter(order => order.status === status).length;
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending": return "#ffc107";
-      case "confirmed": return "#17a2b8";
-      case "preparing": return "#fd7e14";
+      case "pending": return "#ff9900";
+      case "confirmed": return "#0073bb";
+      case "preparing": return "#f0ad4e";
       case "out_for_delivery": return "#007bff";
       case "delivered": return "#28a745";
       case "cancelled": return "#dc3545";
@@ -126,619 +112,202 @@ import axios from "axios";
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ 
-        padding: "50px", 
-        textAlign: "center", 
-        fontFamily: "Arial, sans-serif" 
-      }}>
-        <div style={{ 
-          fontSize: "24px", 
-          marginBottom: "10px" 
-        }}>🔄</div>
-        <div style={{ 
-          fontSize: "18px", 
-          color: "#666" 
-        }}>Loading delivery orders...</div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ padding: 50, textAlign: "center" }}>
+      <div style={{ fontSize: 24 }}>🔄</div>
+      <div style={{ fontSize: 18, color: "#666" }}>Loading delivery orders...</div>
+    </div>
+  );
 
   return (
-    <div style={{ 
-      position: "relative",
-      minHeight: "100vh",
-      padding: "20px", 
-      fontFamily: "Arial, sans-serif", 
-      maxWidth: "1200px", 
-      margin: "0 auto",
-      background: "#FFFFFF",
-      overflow: "hidden"
-    }}>
-      {/* Grid Background */}
-      <div style={{
-        position: "absolute",
-        width: "100%",
-        height: "100%",
-        backgroundSize: "60px 60px",
-        backgroundImage: `
-          linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)
-        `,
-        zIndex: 0,
-        opacity: 0.3
-      }} />
-      
-      <style>
-        {`
-          .delivery-container {
-            position: relative;
-            z-index: 1;
-            background: #FFFFFF;
-            border-radius: 20px;
-            border: 1px solid #E0E0E0;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            padding: 30px;
-            margin: 20px;
-          }
-          
-          .delivery-header {
-            background: #F8F9FA;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
-            border: 1px solid #E0E0E0;
-          }
-          
-          .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-          }
-          
-          .stat-card {
-            background: #FFFFFF;
-            border-radius: 15px;
-            border: 1px solid #E0E0E0;
-            padding: 20px;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-          }
-          
-          .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-          }
-          
-          .filter-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flexWrap: wrap;
-            alignItems: center;
-          }
-          
-          .filter-btn {
-            padding: 8px 15px;
-            border-radius: 8px;
-            border: 1px solid #E0E0E0;
-            background: #FFFFFF;
-            color: #333;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: bold;
-          }
-          
-          .filter-btn:hover {
-            background: #F8F9FA;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
-          }
-          
-          .filter-btn.active {
-            background: #007BFF;
-            color: white;
-            border-color: #007BFF;
-            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-          }
-          
-          .order-card {
-            background: #FFFFFF;
-            border-radius: 15px;
-            border: 1px solid #E0E0E0;
-            padding: 25px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-          }
-          
-          .order-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-          }
-          
-          .status-badge {
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
-            color: white;
-            display: inline-block;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          }
-          
-          .action-buttons {
-            display: flex;
-            gap: 10px;
-            justifyContent: flex-end;
-            flexWrap: wrap;
-          }
-          
-          .btn-primary {
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            background: #007BFF;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            alignItems: center;
-            gap: 8px;
-          }
-          
-          .btn-primary:hover {
-            background: #0056B3;
-            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-            transform: translateY(-2px);
-          }
-          
-          .btn-success {
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            background: #28A745;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            alignItems: center;
-            gap: 8px;
-          }
-          
-          .btn-success:hover {
-            background: #218838;
-            box-shadow: 0 4px 12px rgba(40,167,69,0.3);
-            transform: translateY(-2px);
-          }
-          
-          .btn-info {
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            background: #17A2B8;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            alignItems: center;
-            gap: 8px;
-          }
-          
-          .btn-info:hover {
-            background: #138496;
-            box-shadow: 0 4px 12px rgba(23,162,184,0.3);
-            transform: translateY(-2px);
-          }
-          
-          .btn-whatsapp {
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            background: #25D366;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            alignItems: center;
-            gap: 8px;
-          }
-          
-          .btn-whatsapp:hover {
-            background: #128C7E;
-            box-shadow: 0 4px 12px rgba(37,211,102,0.3);
-            transform: translateY(-2px);
-          }
-          
-          @media (max-width: 768px) {
-            .delivery-container {
-              margin: 10px;
-              padding: 20px;
-            }
-            
-            .stats-grid {
-              grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            }
-            
-            .filter-buttons {
-              flex-direction: column;
-              align-items: stretch;
-            }
-            
-            .filter-btn {
-              width: 100%;
-              text-align: center;
-            }
-            
-            .action-buttons {
-              flex-direction: column;
-              align-items: stretch;
-            }
-          }
-        `}
-      </style>
-
-      <div className="delivery-container">
-        {/* Error Message */}
-        {error && (
-          <div style={{
-            background: "rgba(220,53,69,0.1)",
-            color: "#ff6b6b",
-            padding: "15px",
-            borderRadius: "10px",
-            marginBottom: "20px",
-            border: "1px solid rgba(220,53,69,0.3)",
-            backdropFilter: "blur(10px)",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px"
-          }}>
-            <span>⚠️</span>
-            <span>{error}</span>
-            <button
-              onClick={() => setError(null)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#ff6b6b",
-                cursor: "pointer",
-                fontSize: "18px",
-                marginLeft: "auto"
+    <div style={{ background: "#f3f3f3", minHeight: "100vh", padding: 20 }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h1 style={{ fontSize: 28, color: "#111" }}>🚚 Delivery Dashboard</h1>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button 
+              onClick={() => fetchOrders(JSON.parse(localStorage.getItem("user"))._id)}
+              className="amazon-btn amazon-btn-blue"
+              disabled={loading}
+            >🔄 Refresh</button>
+            <button 
+              onClick={() => {
+                localStorage.removeItem("user");
+                navigate("/");
               }}
+              className="amazon-btn amazon-btn-red"
+            >🚪 Logout</button>
+          </div>
+        </div>
+
+        {/* Success & Error Messages */}
+        {error && <div className="alert alert-error">{error}</div>}
+        {successMessage && <div className="alert alert-success">{successMessage}</div>}
+
+        {/* Order Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 15, marginBottom: 25 }}>
+          <div className="stat-card amazon-gradient-blue">
+            <h3>{orders.length}</h3>
+            <p>📦 Total Orders</p>
+          </div>
+          <div className="stat-card amazon-gradient-yellow">
+            <h3>{getOrderCount("pending")}</h3>
+            <p>⏳ Pending</p>
+          </div>
+          <div className="stat-card amazon-gradient-teal">
+            <h3>{getOrderCount("confirmed")}</h3>
+            <p>✅ Confirmed</p>
+          </div>
+          <div className="stat-card amazon-gradient-orange">
+            <h3>{getOrderCount("preparing")}</h3>
+            <p>👨‍🍳 Preparing</p>
+          </div>
+          <div className="stat-card amazon-gradient-blue2">
+            <h3>{getOrderCount("out_for_delivery")}</h3>
+            <p>🚚 Out for Delivery</p>
+          </div>
+          <div className="stat-card amazon-gradient-green">
+            <h3>{getOrderCount("delivered")}</h3>
+            <p>🎉 Delivered</p>
+          </div>
+        </div>
+
+        {/* Filter Buttons */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
+          {["all","pending","confirmed","preparing","out_for_delivery","delivered"].map(status => (
+            <button
+              key={status}
+              onClick={() => setFilterStatus(status)}
+              className={`amazon-filter-btn ${filterStatus === status ? "active" : ""}`}
             >
-              ×
+              {status === "all" ? `All (${orders.length})` : `${getStatusIcon(status)} ${getStatusText(status)} (${getOrderCount(status)})`}
             </button>
-          </div>
-        )}
-
-        {/* Success Message */}
-        {successMessage && (
-          <div style={{
-            background: "rgba(40,167,69,0.1)",
-            color: "#28a745",
-            padding: "15px",
-            borderRadius: "10px",
-            marginBottom: "20px",
-            border: "1px solid rgba(40,167,69,0.3)",
-            backdropFilter: "blur(10px)",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px"
-          }}>
-            <span>✅</span>
-            <span>{successMessage}</span>
-          </div>
-        )}
-
-        <div className="delivery-header">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-            <h2 style={{ margin: 0, color: "#333" }}>
-              🚚 Delivery Dashboard
-            </h2>
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-          <button 
-            onClick={() => {
-              const user = JSON.parse(localStorage.getItem("user"));
-              fetchOrders(user._id);
-            }}
-            disabled={loading}
-                className="btn-info"
-            style={{ 
-                  background: loading ? "#ccc" : "linear-gradient(135deg, #17a2b8, #138496)",
-              cursor: loading ? "not-allowed" : "pointer"
-            }}
-          >
-                {loading ? "⏳ Loading..." : "🔄 Refresh"}
-          </button>
-          <button 
-            onClick={() => {
-              localStorage.removeItem("user");
-              navigate("/");
-            }}
-                className="btn-primary"
-                style={{ background: "linear-gradient(135deg, #dc3545, #c82333)" }}
-              >
-                🚪 Logout
-          </button>
-            </div>
-        </div>
-      </div>
-
-      {/* Order Statistics */}
-        <div className="stats-grid">
-          <div className="stat-card" style={{ 
-            background: "linear-gradient(135deg, #667eea, #764ba2)" 
-          }}>
-            <h3 style={{ margin: "0 0 5px 0", color: "#fff" }}>{orders.length}</h3>
-            <p style={{ margin: "0", opacity: "0.9", color: "#fff" }}>📦 Total Orders</p>
-          </div>
-          <div className="stat-card" style={{ 
-            background: "linear-gradient(135deg, #ffc107, #e0a800)" 
-          }}>
-            <h3 style={{ margin: "0 0 5px 0", color: "#fff" }}>{getOrderCount("pending")}</h3>
-            <p style={{ margin: "0", opacity: "0.9", color: "#fff" }}>⏳ Pending</p>
-          </div>
-          <div className="stat-card" style={{ 
-            background: "linear-gradient(135deg, #17a2b8, #138496)" 
-          }}>
-            <h3 style={{ margin: "0 0 5px 0", color: "#fff" }}>{getOrderCount("confirmed")}</h3>
-            <p style={{ margin: "0", opacity: "0.9", color: "#fff" }}>✅ Confirmed</p>
-          </div>
-          <div className="stat-card" style={{ 
-            background: "linear-gradient(135deg, #fd7e14, #e55a00)" 
-          }}>
-            <h3 style={{ margin: "0 0 5px 0", color: "#fff" }}>{getOrderCount("preparing")}</h3>
-            <p style={{ margin: "0", opacity: "0.9", color: "#fff" }}>👨‍🍳 Preparing</p>
-        </div>
-          <div className="stat-card" style={{ 
-            background: "linear-gradient(135deg, #007bff, #0056b3)" 
-          }}>
-            <h3 style={{ margin: "0 0 5px 0", color: "#fff" }}>{getOrderCount("out_for_delivery")}</h3>
-            <p style={{ margin: "0", opacity: "0.9", color: "#fff" }}>🚚 Out for Delivery</p>
-        </div>
-          <div className="stat-card" style={{ 
-            background: "linear-gradient(135deg, #28a745, #1e7e34)" 
-          }}>
-            <h3 style={{ margin: "0 0 5px 0", color: "#fff" }}>{getOrderCount("delivered")}</h3>
-            <p style={{ margin: "0", opacity: "0.9", color: "#fff" }}>🎉 Delivered</p>
-        </div>
-      </div>
-
-        {/* Filter Section */}
-        <div className="filter-buttons">
-          <span style={{ fontWeight: "bold", color: "#333", fontSize: "16px" }}>Filter by status:</span>
-          <button 
-            onClick={() => setFilterStatus("all")}
-            className={`filter-btn ${filterStatus === "all" ? "active" : ""}`}
-          >
-            All ({orders.length})
-          </button>
-          <button 
-            onClick={() => setFilterStatus("pending")}
-            className={`filter-btn ${filterStatus === "pending" ? "active" : ""}`}
-          >
-            ⏳ Pending ({getOrderCount("pending")})
-          </button>
-          <button 
-            onClick={() => setFilterStatus("confirmed")}
-            className={`filter-btn ${filterStatus === "confirmed" ? "active" : ""}`}
-          >
-            ✅ Confirmed ({getOrderCount("confirmed")})
-          </button>
-          <button 
-            onClick={() => setFilterStatus("preparing")}
-            className={`filter-btn ${filterStatus === "preparing" ? "active" : ""}`}
-          >
-            👨‍🍳 Preparing ({getOrderCount("preparing")})
-          </button>
-          <button 
-            onClick={() => setFilterStatus("out_for_delivery")}
-            className={`filter-btn ${filterStatus === "out_for_delivery" ? "active" : ""}`}
-          >
-            🚚 Out for Delivery ({getOrderCount("out_for_delivery")})
-          </button>
-          <button 
-            onClick={() => setFilterStatus("delivered")}
-            className={`filter-btn ${filterStatus === "delivered" ? "active" : ""}`}
-          >
-            🎉 Delivered ({getOrderCount("delivered")})
-          </button>
+          ))}
         </div>
 
-        {orders.length === 0 ? (
-          <div style={{ 
-            textAlign: "center", 
-            padding: "50px",
-            background: "rgba(255,255,255,0.05)",
-            backdropFilter: "blur(10px)",
-            borderRadius: "15px",
-            border: "1px solid rgba(255,255,255,0.2)"
-          }}>
-            <div style={{ fontSize: "64px", marginBottom: "20px" }}>📦</div>
-            <h3 style={{ color: "#333", marginBottom: "10px" }}>No delivery orders assigned</h3>
-            <p style={{ color: "#666" }}>You don't have any orders assigned for delivery yet.</p>
-          </div>
-        ) : filteredOrders.length === 0 ? (
-          <div style={{ 
-            textAlign: "center", 
-            padding: "50px",
-            background: "rgba(255,255,255,0.05)",
-            backdropFilter: "blur(10px)",
-            borderRadius: "15px",
-            border: "1px solid rgba(255,255,255,0.2)"
-          }}>
-            <div style={{ fontSize: "64px", marginBottom: "20px" }}>🔍</div>
-            <h3 style={{ color: "#333", marginBottom: "10px" }}>No orders match the current filter</h3>
-            <p style={{ color: "#666" }}>Try selecting a different status filter.</p>
-          </div>
+        {/* Orders Grid */}
+        {filteredOrders.length === 0 ? (
+          <div className="no-orders">No orders match the current filter</div>
         ) : (
-          <div style={{ display: "grid", gap: "20px" }}>
-            {filteredOrders.map((order) => (
+          <div style={{ display: "grid", gap: 20 }}>
+            {filteredOrders.map(order => (
               <div key={order._id} className="order-card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
                   <div>
-                    <h3 style={{ margin: "0 0 5px 0", color: "#333" }}>
-                      📦 Order #{order._id.slice(-8).toUpperCase()}
-                    </h3>
-                    <p style={{ margin: "0", color: "#666", fontSize: "14px" }}>
-                      📅 Created: {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}
-                    </p>
+                    <h3>📦 Order #{order._id.slice(-8).toUpperCase()}</h3>
+                    <p>📅 {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}</p>
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div className="status-badge" style={{ background: getStatusColor(order.status) }}>
                       {getStatusIcon(order.status)} {getStatusText(order.status)}
                     </div>
-                    <div style={{ fontSize: "18px", fontWeight: "bold", color: "#007BFF", marginBottom: "5px" }}>
-                      💰 ₹{order.totalAmount.toFixed(2)}
-                    </div>
-                    {order.estimatedDelivery && (
-                      <div style={{ fontSize: "12px", color: "#666" }}>
-                        ⏰ Est. Delivery: {new Date(order.estimatedDelivery).toLocaleDateString()}
-                      </div>
-                    )}
+                    <div style={{ fontWeight: "bold", fontSize: 18, color: "#0073bb" }}>💰 ₹{order.totalAmount.toFixed(2)}</div>
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
-                  <div>
-                    <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>👤 Customer Information</h4>
-                    <div style={{ 
-                      background: "rgba(255,255,255,0.05)", 
-                      padding: "15px", 
-                      borderRadius: "10px",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      backdropFilter: "blur(10px)"
-                    }}>
-                      <div style={{ color: "#333", marginBottom: "5px" }}><strong>Name:</strong> {order.customer.name}</div>
-                      <div style={{ color: "#333", marginBottom: "5px" }}><strong>Email:</strong> {order.customer.email}</div>
-                      {order.customer.phone && <div style={{ color: "#333" }}><strong>Phone:</strong> {order.customer.phone}</div>}
-                    </div>
+                {/* Customer & Address */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15, marginTop: 15 }}>
+                  <div className="info-card">
+                    <h4>👤 Customer Info</h4>
+                    <p><strong>Name:</strong> {order.customer.name}</p>
+                    <p><strong>Email:</strong> {order.customer.email}</p>
+                    {order.customer.phone && <p><strong>Phone:</strong> {order.customer.phone}</p>}
                   </div>
-
-                  <div>
-                    <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>📍 Delivery Address</h4>
-                    <div style={{ 
-                      background: "#F8F9FA", 
-                      padding: "15px", 
-                      borderRadius: "10px",
-                      border: "1px solid #E0E0E0",
-                      color: "#333"
-                    }}>
-                      {order.deliveryAddress}
-                    </div>
+                  <div className="info-card">
+                    <h4>📍 Delivery Address</h4>
+                    <p>{order.deliveryAddress}</p>
                   </div>
                 </div>
 
-                <div style={{ marginBottom: "20px" }}>
-                  <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>🛍️ Order Items</h4>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                    {order.items.map((item, index) => (
-                      <div 
-                        key={index}
-                        style={{ 
-                          display: "flex", 
-                          alignItems: "center", 
-                          padding: "10px", 
-                          background: "#F8F9FA", 
-                          borderRadius: "8px",
-                          border: "1px solid #E0E0E0",
-                          minWidth: "200px"
-                        }}
-                      >
-                        {item.product && item.product.image && (
-                          <img 
-                            src={`http://localhost:5000/uploads/${item.product.image}`} 
-                            alt={item.product?.name || 'Product'}
-                            style={{ 
-                              width: "40px", 
-                              height: "40px", 
-                              objectFit: "cover", 
-                              borderRadius: "5px",
-                              marginRight: "10px",
-                              boxShadow: "0 0 10px rgba(255,255,255,0.1)"
-                            }}
-                          />
-                        )}
+                {/* Items */}
+                <div style={{ marginTop: 15 }}>
+                  <h4>🛍️ Order Items</h4>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    {order.items.map((item, i) => (
+                      <div key={i} className="item-card">
+                        {item.product?.image && <img src={`http://localhost:5000/uploads/${item.product.image}`} alt={item.product?.name} />}
                         <div>
-                          <div style={{ fontWeight: "bold", fontSize: "14px", color: "#333" }}>{item.product?.name || 'Product removed'}</div>
-                          <div style={{ color: "#666", fontSize: "12px" }}>
-                            Qty: {item.quantity} × ₹{item.price}
-                          </div>
+                          <p><strong>{item.product?.name || 'Removed'}</strong></p>
+                          <p>Qty: {item.quantity} × ₹{item.price}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {order.notes && (
-                  <div style={{ marginBottom: "20px" }}>
-                    <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>📝 Special Instructions</h4>
-                    <div style={{ 
-                      background: "#FFFBF0", 
-                      padding: "15px", 
-                      borderRadius: "10px", 
-                      border: "1px solid #FED7AA",
-                      color: "#C05621"
-                    }}>
-                      {order.notes}
-                    </div>
-                  </div>
-                )}
-
-                <div className="action-buttons">
+                {/* Action Buttons */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 15 }}>
                   {getNextStatus(order.status) && (
                     <button 
                       onClick={() => updateOrderStatus(order._id, getNextStatus(order.status))}
                       disabled={updating}
-                      className="btn-primary"
-                      style={{ 
-                        background: updating ? "#ccc" : getStatusColor(getNextStatus(order.status)),
-                        cursor: updating ? "not-allowed" : "pointer"
-                      }}
+                      className="amazon-btn amazon-btn-blue"
                     >
-                      {updating ? "⏳ Updating..." : `${getStatusIcon(getNextStatus(order.status))} ${getNextStatusText(order.status)}`}
+                      {getNextStatusText(order.status)}
                     </button>
                   )}
-                  
+                  {order.customer.phone && <button onClick={() => window.open(`tel:${order.customer.phone}`)} className="amazon-btn amazon-btn-grey">📞 Call</button>}
                   {order.customer.phone && (
                     <button 
-                      onClick={() => {
-                        window.open(`tel:${order.customer.phone}`);
-                      }}
-                      className="btn-info"
+                      onClick={() => window.open(`https://wa.me/${order.customer.phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(`Hi ${order.customer.name}, I'm on my way with order #${order._id.slice(-8).toUpperCase()}`)}`, '_blank')}
+                      className="amazon-btn amazon-btn-green"
                     >
-                      📞 Call Customer
+                      💬 WhatsApp
                     </button>
                   )}
-
-                  <button 
-                    onClick={() => {
-                      const message = `Hi ${order.customer.name}, this is your delivery person. I'm on my way with your order #${order._id.slice(-8).toUpperCase()}. ETA: ${order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleTimeString() : 'Soon'}`;
-                      const encodedMessage = encodeURIComponent(message);
-                      window.open(`https://wa.me/${order.customer.phone.replace(/[^0-9]/g, '')}?text=${encodedMessage}`, '_blank');
-                    }}
-                    className="btn-whatsapp"
-                  >
-                    💬 WhatsApp
-                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Styles */}
+      <style>{`
+        .amazon-btn {
+          padding: 10px 18px;
+          border-radius: 5px;
+          border: none;
+          font-weight: 600;
+          cursor: pointer;
+          transition: 0.3s;
+        }
+        .amazon-btn:hover { opacity: 0.85; }
+        .amazon-btn-blue { background: #0073bb; color: #fff; }
+        .amazon-btn-red { background: #dc3545; color: #fff; }
+        .amazon-btn-green { background: #25d366; color: #fff; }
+        .amazon-btn-grey { background: #6c757d; color: #fff; }
+
+        .alert { padding: 12px 18px; border-radius: 5px; margin-bottom: 15px; font-weight: 500; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .alert-success { background: #d4edda; color: #155724; }
+
+        .stat-card { padding: 20px; border-radius: 10px; color: #fff; text-align: center; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .amazon-gradient-blue { background: linear-gradient(135deg,#667eea,#764ba2); }
+        .amazon-gradient-yellow { background: linear-gradient(135deg,#ffc107,#e0a800); }
+        .amazon-gradient-teal { background: linear-gradient(135deg,#17a2b8,#138496); }
+        .amazon-gradient-orange { background: linear-gradient(135deg,#fd7e14,#e55a00); }
+        .amazon-gradient-blue2 { background: linear-gradient(135deg,#007bff,#0056b3); }
+        .amazon-gradient-green { background: linear-gradient(135deg,#28a745,#1e7e34); }
+
+        .amazon-filter-btn {
+          padding: 8px 15px;
+          border-radius: 5px;
+          border: 1px solid #ccc;
+          background: #fff;
+          cursor: pointer;
+          transition: 0.3s;
+        }
+        .amazon-filter-btn.active { background: #0073bb; color: #fff; border-color: #0073bb; }
+
+        .order-card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .status-badge { padding: 5px 12px; border-radius: 12px; font-weight: 600; color: #fff; display: inline-block; margin-bottom: 5px; }
+        .info-card { background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0; }
+        .item-card { display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid #e0e0e0; min-width: 200px; }
+        .item-card img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
+        .no-orders { text-align: center; padding: 40px; font-size: 18px; color: #555; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+      `}</style>
     </div>
   );
 }

@@ -9,21 +9,15 @@ export default function OrderConfirmation() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Set page title
-    document.title = "✅ Order Confirmation - Management System";
-    
+    document.title = "Order Confirmation";
     const orderId = localStorage.getItem("lastOrderId");
-    if (!orderId) {
-      navigate("/home");
-      return;
-    }
-    fetchOrder(orderId);
+    if (!orderId) navigate("/home");
+    else fetchOrder(orderId);
   }, [navigate]);
 
   const fetchOrder = async (orderId) => {
     try {
       setLoading(true);
-      setError(null);
       const res = await axios.get(`http://localhost:5000/api/orders/${orderId}`);
       setOrder(res.data);
     } catch (err) {
@@ -35,12 +29,12 @@ export default function OrderConfirmation() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending": return "#ffc107";
-      case "confirmed": return "#17a2b8";
-      case "preparing": return "#fd7e14";
-      case "out_for_delivery": return "#007bff";
-      case "delivered": return "#28a745";
-      case "cancelled": return "#dc3545";
+      case "pending": return "#ff9900";
+      case "confirmed": return "#0073bb";
+      case "preparing": return "#ff9900";
+      case "out_for_delivery": return "#0073bb";
+      case "delivered": return "#007a33";
+      case "cancelled": return "#d32f2f";
       default: return "#6c757d";
     }
   };
@@ -49,7 +43,7 @@ export default function OrderConfirmation() {
     switch (status) {
       case "pending": return "Order Received";
       case "confirmed": return "Order Confirmed";
-      case "preparing": return "Preparing Your Order";
+      case "preparing": return "Preparing";
       case "out_for_delivery": return "Out for Delivery";
       case "delivered": return "Delivered";
       case "cancelled": return "Cancelled";
@@ -57,72 +51,54 @@ export default function OrderConfirmation() {
     }
   };
 
-  if (loading) return <LoadingScreen message="Loading order details..." />;
-  if (error) return <ErrorScreen message={error} />;
-  if (!order) return <ErrorScreen message="Order not found" warning />;
+  if (loading) return <Screen message="Loading order details..." icon="🔄" />;
+  if (error) return <Screen message={error} icon="⚠️" color="#d32f2f" />;
+  if (!order) return <Screen message="Order not found" icon="❌" color="#d32f2f" />;
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      padding: "20px",
-      fontFamily: "Arial, sans-serif",
-      background: "#f5f7fa"
-    }}>
-      <div style={{
-        maxWidth: "900px",
-        margin: "0 auto",
-        background: "#fff",
-        borderRadius: "20px",
-        padding: "30px",
-        boxShadow: "0 8px 30px rgba(0,0,0,0.08)"
-      }}>
+    <div style={{ minHeight: "100vh", padding: "30px", fontFamily: "'Arial', sans-serif", background: "#f3f3f3" }}>
+      <div style={{ maxWidth: "900px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "20px" }}>
+        
         {/* Success Header */}
-        <div style={{
-          textAlign: "center",
-          padding: "20px",
-          borderRadius: "15px",
-          background: "#28a74520",
-          marginBottom: "30px"
-        }}>
-          <div style={{ fontSize: "48px", marginBottom: "10px" }}>✅</div>
-          <h1 style={{ margin: 0, color: "#28a745" }}>Order Confirmed!</h1>
-          <p style={{ color: "#555" }}>Thank you for your order. We'll start preparing it right away.</p>
+        <div style={{ textAlign: "center", padding: "20px", borderRadius: "12px", background: "#dff0d8", color: "#28a745" }}>
+          <div style={{ fontSize: "48px" }}>✅</div>
+          <h1>Order Confirmed!</h1>
+          <p>Thank you for your purchase. Your order is being prepared.</p>
         </div>
 
-        {/* Order Details */}
+        {/* Order Summary */}
         <div style={cardStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px", marginBottom: "20px" }}>
-            <h2 style={{ margin: 0 }}>📋 Order Details</h2>
-            <span style={{
-              ...statusBadge,
-              backgroundColor: getStatusColor(order.status)
-            }}>
+          <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px", marginBottom: "15px" }}>
+            <h2 style={{ margin: 0 }}>📋 Order Summary</h2>
+            <span style={{ ...statusBadge, backgroundColor: getStatusColor(order.status) }}>
               {getStatusText(order.status)}
             </span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div><strong>🆔 Order ID:</strong> #{order._id.slice(-8).toUpperCase()}</div>
-            <div><strong>📅 Order Date:</strong> {new Date(order.createdAt).toLocaleDateString()}</div>
-            <div><strong>💰 Total Amount:</strong> ₹{order.totalAmount.toFixed(2)}</div>
-            <div><strong>📍 Delivery Address:</strong> {order.deliveryAddress}</div>
+            <div><strong>📅 Date:</strong> {new Date(order.createdAt).toLocaleDateString()}</div>
+            <div><strong>💰 Total:</strong> ₹{order.totalAmount.toFixed(2)}</div>
+            <div><strong>📍 Delivery:</strong> {order.deliveryAddress}</div>
           </div>
-          {order.notes && <p><strong>📝 Special Instructions:</strong> {order.notes}</p>}
+          {order.notes && <p><strong>📝 Instructions:</strong> {order.notes}</p>}
         </div>
 
         {/* Order Items */}
         <div style={cardStyle}>
-          <h3 style={{ marginBottom: "20px" }}>🛍️ Order Items</h3>
-          {order.items.map(item => (
-            <div key={item.product._id} style={itemCardStyle}>
-              <img src={item.product.image ? `http://localhost:5000/uploads/${item.product.image}` : undefined} 
-                   alt={item.product.name} 
-                   style={item.product.image ? itemImageStyle : placeholderStyle} />
+          <h3>🛍️ Items</h3>
+          {order.items.map((item, idx) => (
+            <div key={idx} style={itemCardStyle}>
+              <img
+                src={item.product?.image ? `http://localhost:5000/uploads/${item.product.image}` : undefined}
+                alt={item.product?.name || 'Product'}
+                style={item.product?.image ? itemImageStyle : placeholderStyle}
+              />
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: "bold", fontSize: "16px" }}>{item.product.name}</div>
-                <div style={{ color: "#666", fontSize: "14px" }}>{item.product.description || "No description"}</div>
-                <div style={{ color: "#666", fontSize: "14px" }}>Qty: {item.quantity} × ₹{item.price.toFixed(2)}</div>
+                <div style={{ fontWeight: "bold", fontSize: "16px" }}>{item.product?.name || 'Removed Product'}</div>
+                {item.product?.description && <div style={{ fontSize: "14px", color: "#555" }}>{item.product.description}</div>}
+                <div style={{ fontSize: "14px", color: "#555" }}>Qty: {item.quantity} × ₹{item.price.toFixed(2)}</div>
               </div>
-              <div style={{ fontWeight: "bold", color: "#667eea", fontSize: "16px" }}>
+              <div style={{ fontWeight: "bold", color: "#0073bb", fontSize: "16px" }}>
                 ₹{(item.quantity * item.price).toFixed(2)}
               </div>
             </div>
@@ -132,17 +108,17 @@ export default function OrderConfirmation() {
         {/* Next Steps */}
         <div style={cardStyle}>
           <h3>🚀 What's Next?</h3>
-          <ul>
-            <li>📧 We'll send updates via email</li>
+          <ul style={{ paddingLeft: "20px", color: "#555" }}>
+            <li>📧 Updates via email</li>
             <li>📋 Track your order in order history</li>
-            <li>⏰ Estimated delivery time will be provided</li>
-            <li>📞 Contact us for questions</li>
+            <li>⏰ Estimated delivery time</li>
+            <li>📞 Contact support for questions</li>
           </ul>
         </div>
 
-        {/* Action Buttons */}
+        {/* Actions */}
         <div style={{ display: "flex", gap: "15px", justifyContent: "center", flexWrap: "wrap" }}>
-          <button onClick={() => navigate("/customer/dashboard")} style={primaryBtn}>🛍️ Continue Shopping</button>
+          <button onClick={() => navigate("/home")} style={primaryBtn}>🛍️ Continue Shopping</button>
           <button onClick={() => navigate("/order-history")} style={successBtn}>📋 View Order History</button>
         </div>
       </div>
@@ -150,33 +126,34 @@ export default function OrderConfirmation() {
   );
 }
 
-// Reusable styles
+// Styles
 const cardStyle = {
   padding: "20px",
-  marginBottom: "20px",
   borderRadius: "12px",
-  background: "#f8f9fa",
-  boxShadow: "0 4px 15px rgba(0,0,0,0.05)"
+  background: "#fff",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px"
 };
 
 const statusBadge = {
   padding: "6px 14px",
   borderRadius: "20px",
   fontSize: "14px",
-  color: "#fff",
   fontWeight: "bold",
+  color: "#fff",
   display: "inline-block"
 };
 
 const itemCardStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "15px",
+  gap: "12px",
   padding: "12px",
   borderRadius: "12px",
-  background: "#fff",
-  marginBottom: "10px",
-  boxShadow: "0 2px 10px rgba(0,0,0,0.05)"
+  background: "#f9f9f9",
+  marginBottom: "10px"
 };
 
 const itemImageStyle = {
@@ -199,51 +176,39 @@ const placeholderStyle = {
 
 const primaryBtn = {
   padding: "12px 24px",
-  borderRadius: "10px",
+  borderRadius: "8px",
   border: "none",
-  backgroundColor: "#667eea",
-  color: "#fff",
+  background: "#ff9900",
+  color: "#111",
   fontWeight: "bold",
   cursor: "pointer"
 };
 
 const successBtn = {
   padding: "12px 24px",
-  borderRadius: "10px",
+  borderRadius: "8px",
   border: "none",
-  backgroundColor: "#28a745",
+  background: "#0073bb",
   color: "#fff",
   fontWeight: "bold",
   cursor: "pointer"
 };
 
-// Loading & Error screens
-function LoadingScreen({ message }) {
-  return <CenteredScreen bg="#f5f7fa" text={message} icon="🔄" />;
-}
-
-function ErrorScreen({ message, warning }) {
-  return <CenteredScreen bg={warning ? "#fff3cd" : "#f8d7da"} text={message} icon={warning ? "❓" : "⚠️"} color={warning ? "#856404" : "#721c24"} />;
-}
-
-function CenteredScreen({ bg, text, icon, color = "#333" }) {
+// Loading & Error
+function Screen({ message, icon, color = "#333" }) {
   return (
     <div style={{
       minHeight: "100vh",
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
-      background: bg,
-      fontFamily: "Arial, sans-serif"
+      fontFamily: "'Arial', sans-serif",
+      background: "#f3f3f3",
+      color
     }}>
-      <div style={{
-        textAlign: "center",
-        padding: "40px",
-        borderRadius: "20px",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.08)"
-      }}>
-        <div style={{ fontSize: "48px", marginBottom: "20px" }}>{icon}</div>
-        <h2 style={{ color }}>{text}</h2>
+      <div style={{ textAlign: "center", padding: "30px", borderRadius: "12px", background: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+        <div style={{ fontSize: "48px", marginBottom: "15px" }}>{icon}</div>
+        <h2>{message}</h2>
       </div>
     </div>
   );

@@ -13,62 +13,54 @@ export default function Register() {
     address: ""
   });
 
-  // Set page title
   useEffect(() => {
-    document.title = "📝 Register - Management System";
+    document.title = "Register";
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    // If user selects admin role, verify password
-    if (name === "role" && value === "admin") {
-      const adminPassword = prompt("🔐 Admin Registration Verification\n\nPlease enter the admin password to register as admin:");
-      
-      if (adminPassword !== "admin123") {
-        alert("❌ Incorrect admin password! Registration as admin denied.");
-        // Reset to customer role
-        setForm({ ...form, role: "customer" });
-        return;
-      } else {
-        alert("✅ Admin password verified! You can now register as admin.");
+
+    if (name === "role") {
+      if (value === "admin") {
+        const adminPassword = prompt("Enter admin password for verification:");
+        if (adminPassword !== "admin123") {
+          alert("Incorrect admin password! Defaulting to customer role.");
+          setForm({ ...form, role: "customer" });
+          return;
+        } else {
+          alert("Admin verified! You can register as admin.");
+        }
+      } else if (value === "delivery") {
+        const deliveryPassword = prompt("Enter delivery personnel password for verification:");
+        if (deliveryPassword !== "delivery123") {
+          alert("Incorrect delivery password! Defaulting to customer role.");
+          setForm({ ...form, role: "customer" });
+          return;
+        } else {
+          alert("Delivery verified! You can register as delivery personnel.");
+        }
       }
     }
-    
+
     setForm({ ...form, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Final verification for admin registration
     if (form.role === "admin") {
-      const finalConfirm = window.confirm("🔐 Final Confirmation\n\nYou are about to register as an ADMIN user with full system privileges.\n\nAre you sure you want to proceed?");
-      if (!finalConfirm) {
-        return;
-      }
+      const confirmAdmin = window.confirm("You are registering as ADMIN. Proceed?");
+      if (!confirmAdmin) return;
     }
-    
+    if (form.role === "delivery") {
+      const confirmDelivery = window.confirm("You are registering as DELIVERY personnel. Proceed?");
+      if (!confirmDelivery) return;
+    }
     try {
       const res = await axios.post("http://localhost:5000/api/users/register", form);
-      alert(`✅ ${res.data.message}\n\n${form.role === "admin" ? "🔑 Admin account created successfully!" : "🎉 Welcome to the platform!"}`);
-      setForm({
-        username: "",
-        name: "",
-        email: "",
-        phone: "",
-        address: "",
-        password: "",
-        role: "customer"
-      });
+      alert(res.data.message);
+      setForm({ username:"", name:"", email:"", phone:"", address:"", password:"", role:"customer" });
     } catch (err) {
-      if (err.response) {
-        alert(`❌ Registration Failed\n\n${err.response.data.message}`);
-      } else if (err.request) {
-        alert("❌ Server Error\n\nServer did not respond. Please check if the backend is running!");
-      } else {
-        alert("❌ Error: " + err.message);
-      }
+      alert(err.response?.data?.message || err.message);
     }
   };
 
@@ -78,322 +70,129 @@ export default function Register() {
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
-      background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
-      fontFamily: "'Inter', 'Segoe UI', 'Roboto', sans-serif",
-      padding: "20px",
-      position: "relative"
+      backgroundColor: "#f2f2f2",
+      fontFamily: "'Amazon Ember', 'Arial', sans-serif",
+      padding: "20px"
     }}>
-      {/* Light Background Pattern */}
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundImage: `
-          radial-gradient(circle at 25% 25%, rgba(0,123,255,0.05) 0%, transparent 50%),
-          radial-gradient(circle at 75% 75%, rgba(40,167,69,0.05) 0%, transparent 50%)
-        `,
-        zIndex: 0
-      }} />
-      
       <style>
         {`
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-          
-          .register-form {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            max-width: 480px;
-            padding: 50px 40px;
-            border-radius: 20px;
+          .register-card {
             background: #ffffff;
-            box-shadow: 
-              0 10px 30px rgba(0, 0, 0, 0.08),
-              0 2px 10px rgba(0, 0, 0, 0.04);
-            border: 1px solid #e9ecef;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-          
-          .register-form:hover {
-            transform: translateY(-3px);
-            box-shadow: 
-              0 15px 40px rgba(0, 0, 0, 0.12),
-              0 5px 15px rgba(0, 0, 0, 0.06);
-          }
-          
-          .form-input {
+            padding: 40px 32px;
+            max-width: 400px;
             width: 100%;
-            marginBottom: 20px;
-            padding: 16px 20px;
-            border-radius: 12px;
-            border: 2px solid #e9ecef;
-            outline: none;
-            fontSize: 15px;
-            background: #ffffff;
-            color: #495057;
-            font-weight: 500;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            text-align: left;
           }
-          
-          .form-input:focus {
-            border: 2px solid #007bff;
-            background: #ffffff;
-            box-shadow: 
-              0 0 0 4px rgba(0, 123, 255, 0.1),
-              0 4px 15px rgba(0, 123, 255, 0.08);
-            transform: translateY(-1px);
-          }
-          
-          .form-input::placeholder {
-            color: #6c757d;
-            font-weight: 400;
-          }
-          
-          .form-select {
-            width: 100%;
-            marginBottom: 20px;
-            padding: 16px 20px;
-            border-radius: 12px;
-            border: 2px solid #e9ecef;
-            outline: none;
-            fontSize: 15px;
-            background: #ffffff;
-            color: #495057;
-            font-weight: 500;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-          }
-          
-          .form-select:focus {
-            border: 2px solid #007bff;
-            background: #ffffff;
-            box-shadow: 
-              0 0 0 4px rgba(0, 123, 255, 0.1),
-              0 4px 15px rgba(0, 123, 255, 0.08);
-            transform: translateY(-1px);
-          }
-          
-          .submit-btn {
-            width: 100%;
-            padding: 18px 24px;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-            color: white;
-            fontWeight: 600;
-            fontSize: 16px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
-            position: relative;
-            overflow: hidden;
-          }
-          
-          .submit-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-          }
-          
-          .submit-btn:hover::before {
-            left: 100%;
-          }
-          
-          .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
-            background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
-          }
-          
-          .submit-btn:active {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
-          }
-          
-          .register-link {
-            color: #007bff;
-            text-decoration: none;
+
+          .register-title {
+            font-size: 24px;
             font-weight: 600;
-            transition: all 0.3s ease;
-            position: relative;
+            margin-bottom: 6px;
+            color: #111;
           }
-          
-          .register-link::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 2px;
-            bottom: -2px;
-            left: 0;
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-            transition: width 0.3s ease;
+
+          .register-subtitle {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 24px;
           }
-          
-          .register-link:hover::after {
+
+          .form-input, .form-select {
             width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
           }
-          
-          .register-link:hover {
-            color: #0056b3;
+
+          .form-input:focus, .form-select:focus {
+            border-color: #f90;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255,153,0,0.2);
           }
-          
-          @media (max-width: 768px) {
-            .register-form {
-              padding: 40px 30px;
-              margin: 10px;
-              max-width: 100%;
-            }
-            
-            .form-input, .form-select {
-              padding: 14px 18px;
-              fontSize: 14px;
-            }
-            
-            .submit-btn {
-              padding: 16px 20px;
-              fontSize: 15px;
-            }
+
+          .register-button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #a88734;
+            background: #f0c14b;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            color: #111;
+            transition: all 0.2s ease;
           }
+
+          .register-button:hover {
+            background: #e2b33c;
+          }
+
+          .footer-text {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #555;
+          }
+
+          .footer-link {
+            color: #0066c0;
+            text-decoration: none;
+          }
+
+          .footer-link:hover {
+            text-decoration: underline;
+          }
+
+          .role-warning {
+            margin-bottom:16px;
+            padding:10px;
+            border-radius:4px;
+            font-size:13px;
+            text-align:center;
+          }
+
+          .admin-warning { background:#fff3cd; border:1px solid #ffeeba; color:#856404; }
+          .delivery-warning { background:#d1ecf1; border:1px solid #bee5eb; color:#0c5460; }
         `}
       </style>
 
-      <div className="register-form">
-        <div style={{ marginBottom: "40px", textAlign: "center" }}>
-          <div style={{
-            width: "60px",
-            height: "60px",
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, #007bff 0%, #0056b3 100%)",
-            margin: "0 auto 20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "24px",
-            boxShadow: "0 4px 15px rgba(0, 123, 255, 0.2)"
-          }}>
-            👤
-          </div>
-          <h2 style={{ 
-            margin: "0 0 12px 0", 
-            color: "#343a40", 
-            fontSize: "32px", 
-            fontWeight: "700"
-          }}>
-            Create Account
-          </h2>
-          <p style={{ 
-            margin: "0", 
-            color: "#6c757d", 
-            fontSize: "16px",
-            fontWeight: "500",
-            lineHeight: "1.5"
-          }}>
-            Join our professional platform and start your journey today
-          </p>
-        </div>
+      <div className="register-card">
+        <h2 className="register-title">Create account</h2>
+        <p className="register-subtitle">Please fill in the details to create your account.</p>
+
         <form onSubmit={handleSubmit}>
-          <input 
-            type="text" 
-            name="username" 
-            placeholder="Username" 
-            value={form.username} 
-            onChange={handleChange} 
-            required 
-            className="form-input"
-          />
-          <input 
-            type="text" 
-            name="name" 
-            placeholder="Full Name" 
-            value={form.name} 
-            onChange={handleChange} 
-            required 
-            className="form-input"
-          />
-          <input 
-            type="email" 
-            name="email" 
-            placeholder="Email" 
-            value={form.email} 
-            onChange={handleChange} 
-            required 
-            className="form-input"
-          />
-          <input 
-            type="text" 
-            name="phone" 
-            placeholder="Phone" 
-            value={form.phone} 
-            onChange={handleChange} 
-            className="form-input"
-          />
-          <input 
-            type="text" 
-            name="address" 
-            placeholder="Address" 
-            value={form.address} 
-            onChange={handleChange} 
-            className="form-input"
-          />
-          <input 
-            type="password" 
-            name="password" 
-            placeholder="Password" 
-            value={form.password} 
-            onChange={handleChange} 
-            required 
-            className="form-input"
-          />
-          <select 
-            name="role" 
-            value={form.role} 
-            onChange={handleChange} 
-            className="form-select"
-            title="Select your account type. Admin requires special verification."
-          >
-            <option value="customer">👤 Customer</option>
-            <option value="admin">🔐 Admin (Password Required)</option>
-            <option value="delivery">🚚 Delivery Personnel</option>
+          <input type="text" name="username" placeholder="Username" value={form.username} onChange={handleChange} required className="form-input"/>
+          <input type="text" name="name" placeholder="Full Name" value={form.name} onChange={handleChange} required className="form-input"/>
+          <input type="email" name="email" placeholder="Email" value={form.email} onChange={handleChange} required className="form-input"/>
+          <input type="text" name="phone" placeholder="Phone" value={form.phone} onChange={handleChange} className="form-input"/>
+          <input type="text" name="address" placeholder="Address" value={form.address} onChange={handleChange} className="form-input"/>
+          <input type="password" name="password" placeholder="Password" value={form.password} onChange={handleChange} required className="form-input"/>
+          <select name="role" value={form.role} onChange={handleChange} className="form-select">
+            <option value="customer">Customer</option>
+            <option value="admin">Admin (password required)</option>
+            <option value="delivery">Delivery Personnel (password required)</option>
           </select>
-          
-          {form.role === "admin" && (
-            <div style={{
-              marginBottom: "20px",
-              padding: "12px 16px",
-              background: "rgba(255, 193, 7, 0.1)",
-              border: "1px solid rgba(255, 193, 7, 0.3)",
-              borderRadius: "8px",
-              fontSize: "13px",
-              color: "#856404",
-              textAlign: "center"
-            }}>
-              🔐 <strong>Admin Registration:</strong> You have been verified to create an admin account with full system privileges.
+
+          {form.role==="admin" && (
+            <div className="role-warning admin-warning">
+              Admin registration verified.
             </div>
           )}
-          
-          <button type="submit" className="submit-btn">
-            Create Account
-          </button>
+
+          {form.role==="delivery" && (
+            <div className="role-warning delivery-warning">
+              Delivery registration verified.
+            </div>
+          )}
+
+          <button type="submit" className="register-button">Create Account</button>
         </form>
-        
-        <div style={{ 
-          marginTop: "32px", 
-          fontSize: "15px", 
-          color: "#6c757d",
-          textAlign: "center",
-          fontWeight: "500"
-        }}>
-          Already have an account?{" "}
-          <Link to="/login" className="register-link">
-            Sign in here
-          </Link>
+
+        <div className="footer-text">
+          Already have an account? <Link to="/login" className="footer-link">Sign in</Link>
         </div>
       </div>
     </div>

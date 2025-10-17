@@ -7,10 +7,18 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  // Set page title
+  // Auto-redirect if user is already logged in
   useEffect(() => {
-    document.title = "🔐 Login - Management System";
-  }, []);
+    document.title = "Login";
+
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      if (user.role === "admin") navigate("/admin/dashboard");
+      else if (user.role === "delivery") navigate("/delivery/dashboard");
+      else navigate("/home");
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,10 +28,16 @@ export default function Login() {
         password,
       });
 
-      const user = res.data.user;
-      alert(`Login successful! Role: ${user.role}`);
-      localStorage.setItem("user", JSON.stringify(user));
+      const user = res.data.user || res.data;
+      if (!user || !user.role) {
+        alert("Invalid server response");
+        return;
+      }
 
+      localStorage.setItem("user", JSON.stringify(user));
+      alert(`Login successful! Role: ${user.role}`);
+
+      // Redirect based on role
       if (user.role === "admin") navigate("/admin/dashboard");
       else if (user.role === "delivery") navigate("/delivery/dashboard");
       else navigate("/home");
@@ -38,144 +52,60 @@ export default function Login() {
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
-      backgroundColor: "#F8F9FA",
-      fontFamily: "'Inter', 'Roboto', sans-serif",
+      backgroundColor: "#f2f2f2",
+      fontFamily: "'Amazon Ember', 'Arial', sans-serif",
       padding: "20px"
     }}>
       <style>
         {`
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-          
           .login-card {
-            background: #FFFFFF;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border: 1px solid #E0E0E0;
-            transition: all 0.3s ease;
-          }
-          
-          .login-card:hover {
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-          }
-          
-          .form-input {
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            border: 1px solid #ddd;
+            max-width: 360px;
             width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #E0E0E0;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            background: #FFFFFF;
-            color: #333;
+            padding: 36px 32px;
+            text-align: left;
           }
-          
-          .form-input:focus {
-            outline: none;
-            border-color: #007BFF;
-            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
-          }
-          
-          .form-input::placeholder {
-            color: #999;
-          }
-          
-          .login-button {
-            width: 100%;
-            padding: 12px 16px;
-            background: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-          }
-          
-          .login-button:hover {
-            background: #0056B3;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-          }
-          
-          .login-link {
-            color: #007BFF;
-            text-decoration: none;
-            font-weight: 500;
-          }
-          
-          .login-link:hover {
-            text-decoration: underline;
-          }
+          .login-title { font-size: 24px; font-weight: 600; margin-bottom: 6px; color: #111; }
+          .login-subtitle { font-size: 14px; color: #555; margin-bottom: 24px; }
+          .form-input { width: 100%; padding: 10px 12px; margin-bottom: 16px; font-size: 14px; border-radius: 4px; border: 1px solid #ccc; }
+          .form-input:focus { border-color: #f90; outline: none; box-shadow: 0 0 0 2px rgba(255, 153, 0, 0.2); }
+          .login-button { width: 100%; padding: 12px; background: #f0c14b; border: 1px solid #a88734; border-radius: 4px; font-size: 16px; font-weight: 500; cursor: pointer; color: #111; transition: all 0.2s ease; }
+          .login-button:hover { background: #e2b33c; }
+          .login-footer { margin-top: 20px; font-size: 12px; color: #555; }
+          .login-link { color: #0066c0; text-decoration: none; }
+          .login-link:hover { text-decoration: underline; }
         `}
       </style>
 
-      {/* Login Card */}
-      <div className="login-card" style={{
-        width: "100%",
-        maxWidth: "400px",
-        padding: "40px",
-        textAlign: "center"
-      }}>
-        <div style={{ marginBottom: "32px" }}>
-          <h2 style={{ 
-            margin: "0 0 8px 0", 
-            color: "#222", 
-            fontSize: "28px", 
-            fontWeight: "600" 
-          }}>
-            Welcome Back
-          </h2>
-          <p style={{ 
-            margin: "0", 
-            color: "#666", 
-            fontSize: "14px" 
-          }}>
-            Sign in to your account to continue
-          </p>
-        </div>
+      <div className="login-card">
+        <h2 className="login-title">Sign-In</h2>
+        <p className="login-subtitle">Welcome back! Please sign in to your account.</p>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "20px" }}>
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="form-input"
-            />
-          </div>
-          
-          <div style={{ marginBottom: "24px" }}>
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="form-input"
-            />
-          </div>
-          
-          <button
-            type="submit"
-            className="login-button"
-          >
-            Sign In
-          </button>
+          <input
+            type="text"
+            placeholder="Email or mobile phone number"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            className="form-input"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="form-input"
+          />
+          <button type="submit" className="login-button">Sign-In</button>
         </form>
-        
-        <div style={{ 
-          marginTop: "24px", 
-          fontSize: "14px", 
-          color: "#666",
-          textAlign: "center"
-        }}>
-          Don't have an account?{" "}
-          <Link to="/register" className="login-link">
-            Create one here
-          </Link>
+
+        <div className="login-footer">
+          <p>New to My E-commerce? <Link to="/register" className="login-link">Create your account</Link></p>
         </div>
       </div>
     </div>

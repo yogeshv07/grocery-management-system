@@ -6,7 +6,7 @@ export default function CustomerDashboard() {
 
   // Set page title
   useEffect(() => {
-    document.title = "👤 Customer Dashboard - Management System";
+    document.title = "Customer Panel";
   }, []);
 
   useEffect(() => {
