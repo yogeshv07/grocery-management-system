@@ -102,7 +102,7 @@ export default function Home() {
 
       {/* Header */}
       <header className="header">
-        <div className="logo" onClick={() => navigate("/")}>🛒 GroceryStore</div>
+        <div className="logo" onClick={() => navigate("/")}>🛒 Amazon Mart</div>
 
         <div className="header-center">
           <input

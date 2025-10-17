@@ -53,7 +53,6 @@ export default function DeliveryDashboard() {
   };
 
   const filteredOrders = orders.filter(order => filterStatus === "all" || order.status === filterStatus);
-
   const getOrderCount = (status) => orders.filter(order => order.status === status).length;
 
   const getStatusColor = (status) => {
@@ -120,7 +119,7 @@ export default function DeliveryDashboard() {
   );
 
   return (
-    <div style={{ background: "#f3f3f3", minHeight: "100vh", padding: 20 }}>
+    <div style={{ background: "#f7f7f7", minHeight: "100vh", padding: 20 }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -141,36 +140,22 @@ export default function DeliveryDashboard() {
           </div>
         </div>
 
-        {/* Success & Error Messages */}
+        {/* Messages */}
         {error && <div className="alert alert-error">{error}</div>}
         {successMessage && <div className="alert alert-success">{successMessage}</div>}
 
-        {/* Order Stats */}
+        {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 15, marginBottom: 25 }}>
           <div className="stat-card amazon-gradient-blue">
             <h3>{orders.length}</h3>
             <p>📦 Total Orders</p>
           </div>
-          <div className="stat-card amazon-gradient-yellow">
-            <h3>{getOrderCount("pending")}</h3>
-            <p>⏳ Pending</p>
-          </div>
-          <div className="stat-card amazon-gradient-teal">
-            <h3>{getOrderCount("confirmed")}</h3>
-            <p>✅ Confirmed</p>
-          </div>
-          <div className="stat-card amazon-gradient-orange">
-            <h3>{getOrderCount("preparing")}</h3>
-            <p>👨‍🍳 Preparing</p>
-          </div>
-          <div className="stat-card amazon-gradient-blue2">
-            <h3>{getOrderCount("out_for_delivery")}</h3>
-            <p>🚚 Out for Delivery</p>
-          </div>
-          <div className="stat-card amazon-gradient-green">
-            <h3>{getOrderCount("delivered")}</h3>
-            <p>🎉 Delivered</p>
-          </div>
+          {["pending","confirmed","preparing","out_for_delivery","delivered"].map(status => (
+            <div key={status} className={`stat-card amazon-gradient-${status}`}>
+              <h3>{getOrderCount(status)}</h3>
+              <p>{getStatusIcon(status)} {getStatusText(status)}</p>
+            </div>
+          ))}
         </div>
 
         {/* Filter Buttons */}
@@ -186,7 +171,7 @@ export default function DeliveryDashboard() {
           ))}
         </div>
 
-        {/* Orders Grid */}
+        {/* Orders */}
         {filteredOrders.length === 0 ? (
           <div className="no-orders">No orders match the current filter</div>
         ) : (
@@ -212,7 +197,6 @@ export default function DeliveryDashboard() {
                     <h4>👤 Customer Info</h4>
                     <p><strong>Name:</strong> {order.customer.name}</p>
                     <p><strong>Email:</strong> {order.customer.email}</p>
-                    {order.customer.phone && <p><strong>Phone:</strong> {order.customer.phone}</p>}
                   </div>
                   <div className="info-card">
                     <h4>📍 Delivery Address</h4>
@@ -236,8 +220,8 @@ export default function DeliveryDashboard() {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 15 }}>
+                {/* Action */}
+                <div style={{ marginTop: 15 }}>
                   {getNextStatus(order.status) && (
                     <button 
                       onClick={() => updateOrderStatus(order._id, getNextStatus(order.status))}
@@ -245,15 +229,6 @@ export default function DeliveryDashboard() {
                       className="amazon-btn amazon-btn-blue"
                     >
                       {getNextStatusText(order.status)}
-                    </button>
-                  )}
-                  {order.customer.phone && <button onClick={() => window.open(`tel:${order.customer.phone}`)} className="amazon-btn amazon-btn-grey">📞 Call</button>}
-                  {order.customer.phone && (
-                    <button 
-                      onClick={() => window.open(`https://wa.me/${order.customer.phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(`Hi ${order.customer.name}, I'm on my way with order #${order._id.slice(-8).toUpperCase()}`)}`, '_blank')}
-                      className="amazon-btn amazon-btn-green"
-                    >
-                      💬 WhatsApp
                     </button>
                   )}
                 </div>
@@ -265,48 +240,32 @@ export default function DeliveryDashboard() {
 
       {/* Styles */}
       <style>{`
-        .amazon-btn {
-          padding: 10px 18px;
-          border-radius: 5px;
-          border: none;
-          font-weight: 600;
-          cursor: pointer;
-          transition: 0.3s;
-        }
+        .amazon-btn { padding: 10px 20px; border-radius: 6px; font-weight: 600; border: none; cursor: pointer; transition: 0.3s; }
         .amazon-btn:hover { opacity: 0.85; }
         .amazon-btn-blue { background: #0073bb; color: #fff; }
         .amazon-btn-red { background: #dc3545; color: #fff; }
-        .amazon-btn-green { background: #25d366; color: #fff; }
-        .amazon-btn-grey { background: #6c757d; color: #fff; }
 
         .alert { padding: 12px 18px; border-radius: 5px; margin-bottom: 15px; font-weight: 500; }
         .alert-error { background: #f8d7da; color: #721c24; }
         .alert-success { background: #d4edda; color: #155724; }
 
-        .stat-card { padding: 20px; border-radius: 10px; color: #fff; text-align: center; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .stat-card { padding: 22px; border-radius: 10px; color: #fff; text-align: center; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .amazon-gradient-blue { background: linear-gradient(135deg,#667eea,#764ba2); }
-        .amazon-gradient-yellow { background: linear-gradient(135deg,#ffc107,#e0a800); }
-        .amazon-gradient-teal { background: linear-gradient(135deg,#17a2b8,#138496); }
-        .amazon-gradient-orange { background: linear-gradient(135deg,#fd7e14,#e55a00); }
-        .amazon-gradient-blue2 { background: linear-gradient(135deg,#007bff,#0056b3); }
-        .amazon-gradient-green { background: linear-gradient(135deg,#28a745,#1e7e34); }
+        .amazon-gradient-pending { background: linear-gradient(135deg,#ffc107,#e0a800); }
+        .amazon-gradient-confirmed { background: linear-gradient(135deg,#17a2b8,#138496); }
+        .amazon-gradient-preparing { background: linear-gradient(135deg,#fd7e14,#e55a00); }
+        .amazon-gradient-out_for_delivery { background: linear-gradient(135deg,#007bff,#0056b3); }
+        .amazon-gradient-delivered { background: linear-gradient(135deg,#28a745,#1e7e34); }
 
-        .amazon-filter-btn {
-          padding: 8px 15px;
-          border-radius: 5px;
-          border: 1px solid #ccc;
-          background: #fff;
-          cursor: pointer;
-          transition: 0.3s;
-        }
+        .amazon-filter-btn { padding: 8px 15px; border-radius: 5px; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: 0.3s; }
         .amazon-filter-btn.active { background: #0073bb; color: #fff; border-color: #0073bb; }
 
-        .order-card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        .status-badge { padding: 5px 12px; border-radius: 12px; font-weight: 600; color: #fff; display: inline-block; margin-bottom: 5px; }
-        .info-card { background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0; }
-        .item-card { display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid #e0e0e0; min-width: 200px; }
-        .item-card img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
-        .no-orders { text-align: center; padding: 40px; font-size: 18px; color: #555; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .order-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 3px 12px rgba(0,0,0,0.08); }
+        .status-badge { padding: 5px 14px; border-radius: 12px; font-weight: 600; color: #fff; display: inline-block; margin-bottom: 5px; }
+        .info-card { background: #f8f9fa; padding: 14px; border-radius: 8px; border: 1px solid #e0e0e0; }
+        .item-card { display: flex; align-items: center; gap: 12px; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #e0e0e0; min-width: 200px; }
+        .item-card img { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; }
+        .no-orders { text-align: center; padding: 50px; font-size: 18px; color: #555; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
       `}</style>
     </div>
   );

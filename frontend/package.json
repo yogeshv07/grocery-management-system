@@ -13,6 +13,7 @@
     "react-router-dom": "^7.9.3",
     "react-scripts": "5.0.1",
     "react-tsparticles": "^2.12.2",
+    "recharts": "^3.3.0",
     "tsparticles": "^3.9.1",
     "web-vitals": "^2.1.4"
   },
