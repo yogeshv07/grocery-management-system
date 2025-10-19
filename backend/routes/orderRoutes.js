@@ -6,7 +6,8 @@ const {
   getCustomerOrders, 
   getAllOrders, 
   updateOrderStatus, 
-  getDeliveryOrders 
+  getDeliveryOrders,
+  cancelOrder
 } = require("../controllers/orderController");
 
 // Helper function to validate ObjectId
@@ -53,5 +54,8 @@ router.put("/:orderId/status", updateOrderStatus);
 
 // Get delivery person's orders - MUST come before /:orderId route
 router.get("/delivery/:deliveryPersonId", getDeliveryOrders);
+
+// ✅ Cancel order route - Restores inventory automatically
+router.put("/:orderId/cancel", cancelOrder);
 
 module.exports = router;

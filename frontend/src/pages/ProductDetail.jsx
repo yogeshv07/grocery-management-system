@@ -10,6 +10,11 @@ export default function ProductDetail() {
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     document.title = "Product Details - Shop";
@@ -27,8 +32,73 @@ export default function ProductDetail() {
       }
     };
 
-    if (productId) fetchProduct();
+    if (productId) {
+      fetchProduct();
+      fetchReviews();
+    }
   }, [productId]);
+
+  const fetchReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      const res = await axios.get(`http://localhost:5000/api/reviews/${productId}`);
+      setReviews(res.data);
+    } catch (err) {
+      console.error("Failed to fetch reviews:", err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) {
+      alert("Please login to post a review");
+      navigate("/");
+      return;
+    }
+
+    if (!comment.trim()) {
+      alert("Please write a comment");
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      await axios.post("http://localhost:5000/api/reviews", {
+        productId: product._id,
+        customerId: user._id,
+        customerName: user.name,
+        rating,
+        comment: comment.trim(),
+      });
+      alert("Review posted successfully!");
+      setComment("");
+      setRating(5);
+      fetchReviews();
+    } catch (err) {
+      alert("Failed to post review: " + (err.response?.data?.error || err.message));
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const renderStars = (rating, interactive = false, onRate = null) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span
+          key={i}
+          className={`star ${i <= rating ? "filled" : ""} ${interactive ? "interactive" : ""}`}
+          onClick={interactive && onRate ? () => onRate(i) : undefined}
+        >
+          ★
+        </span>
+      );
+    }
+    return stars;
+  };
 
   const handleAddToCart = async () => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -103,10 +173,66 @@ export default function ProductDetail() {
             <ul>
               <li>High quality materials</li>
               <li>Fast delivery</li>
-              <li>30-day return policy</li>
               <li>Customer support included</li>
             </ul>
           </div>
+        </div>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="reviews-section">
+        <h2>Customer Reviews</h2>
+        
+        {/* Add Review Form */}
+        <div className="add-review">
+          <h3>Write a Review</h3>
+          <form onSubmit={handleSubmitReview}>
+            <div className="rating-input">
+              <label>Your Rating:</label>
+              <div className="stars-input">
+                {renderStars(rating, true, setRating)}
+              </div>
+            </div>
+            <div className="comment-input">
+              <label>Your Comment:</label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Share your experience with this product..."
+                rows="4"
+                required
+              />
+            </div>
+            <button type="submit" disabled={submittingReview} className="submit-review-btn">
+              {submittingReview ? "Posting..." : "Post Review"}
+            </button>
+          </form>
+        </div>
+
+        {/* Display Reviews */}
+        <div className="reviews-list">
+          {reviewsLoading ? (
+            <p>Loading reviews...</p>
+          ) : reviews.length === 0 ? (
+            <p className="no-reviews">No reviews yet. Be the first to review this product!</p>
+          ) : (
+            reviews.map((review) => (
+              <div key={review._id} className="review-card">
+                <div className="review-header">
+                  <div className="reviewer-info">
+                    <strong>{review.customerName || "Anonymous"}</strong>
+                    <span className="review-date">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="review-stars">
+                    {renderStars(review.rating)}
+                  </div>
+                </div>
+                <p className="review-comment">{review.comment}</p>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -239,6 +365,166 @@ export default function ProductDetail() {
           justify-content: center;
           align-items: center;
           font-size: 24px;
+        }
+
+        .reviews-section {
+          max-width: 1200px;
+          margin: 30px auto;
+          background: #fff;
+          padding: 30px;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .reviews-section h2 {
+          font-size: 24px;
+          margin-bottom: 20px;
+          border-bottom: 2px solid #FF9900;
+          padding-bottom: 10px;
+        }
+
+        .add-review {
+          background: #f9f9f9;
+          padding: 20px;
+          border-radius: 8px;
+          margin-bottom: 30px;
+        }
+
+        .add-review h3 {
+          font-size: 18px;
+          margin-bottom: 15px;
+        }
+
+        .rating-input {
+          margin-bottom: 15px;
+        }
+
+        .rating-input label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: bold;
+        }
+
+        .stars-input {
+          display: flex;
+          gap: 5px;
+        }
+
+        .star {
+          font-size: 28px;
+          color: #ddd;
+          transition: color 0.2s;
+        }
+
+        .star.filled {
+          color: #FFD814;
+        }
+
+        .star.interactive {
+          cursor: pointer;
+        }
+
+        .star.interactive:hover {
+          color: #FFC107;
+        }
+
+        .comment-input {
+          margin-bottom: 15px;
+        }
+
+        .comment-input label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: bold;
+        }
+
+        .comment-input textarea {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+          font-family: Arial, sans-serif;
+          resize: vertical;
+        }
+
+        .submit-review-btn {
+          background-color: #FF9900;
+          border: none;
+          padding: 10px 30px;
+          cursor: pointer;
+          font-weight: bold;
+          color: white;
+          border-radius: 4px;
+          font-size: 14px;
+        }
+
+        .submit-review-btn:disabled {
+          background: #ccc;
+          cursor: not-allowed;
+        }
+
+        .submit-review-btn:hover:not(:disabled) {
+          background-color: #e68a00;
+        }
+
+        .reviews-list {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .no-reviews {
+          text-align: center;
+          color: #888;
+          padding: 20px;
+          font-style: italic;
+        }
+
+        .review-card {
+          border: 1px solid #eee;
+          padding: 15px;
+          border-radius: 8px;
+          background: #fafafa;
+        }
+
+        .review-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+
+        .reviewer-info {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+
+        .reviewer-info strong {
+          font-size: 16px;
+          color: #333;
+        }
+
+        .review-date {
+          font-size: 12px;
+          color: #888;
+        }
+
+        .review-stars {
+          display: flex;
+          gap: 2px;
+        }
+
+        .review-stars .star {
+          font-size: 18px;
+        }
+
+        .review-comment {
+          font-size: 14px;
+          color: #555;
+          line-height: 1.6;
+          margin: 0;
         }
 
         @media(max-width: 768px) {

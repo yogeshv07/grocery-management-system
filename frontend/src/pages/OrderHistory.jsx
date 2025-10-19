@@ -9,7 +9,7 @@ export default function OrderHistory() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    document.title = "Order History ";
+    document.title = "Order History";
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) {
       navigate("/");
@@ -28,6 +28,26 @@ export default function OrderHistory() {
       setError("Failed to fetch orders: " + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🔴 Cancel Order function - Restores inventory automatically
+  const cancelOrder = async (orderId) => {
+    if (!window.confirm("Are you sure you want to cancel this order?\n")) return;
+
+    try {
+      const response = await axios.put(`http://localhost:5000/api/orders/${orderId}/cancel`);
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === orderId ? { ...o, status: "cancelled" } : o
+        )
+      );
+      
+      // Refresh orders to get updated data
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user) fetchOrders(user._id);
+    } catch (err) {
+      alert("Failed to cancel order: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -69,12 +89,7 @@ export default function OrderHistory() {
       {/* Header */}
       <div style={{ maxWidth: "1100px", margin: "0 auto 40px auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
         <h1 style={{ fontSize: "32px", fontWeight: "bold", color: "#111", margin: 0 }}>📋 Your Orders</h1>
-        <button
-          onClick={() => navigate("/home")}
-          style={amazonPrimaryBtn}
-        >
-          🏠 Back to Home
-        </button>
+        <button onClick={() => navigate("/home")} style={amazonPrimaryBtn}>🏠 Back to Home</button>
       </div>
 
       {/* Orders List */}
@@ -131,7 +146,15 @@ export default function OrderHistory() {
             {/* Actions */}
             <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "12px", flexWrap: "wrap" }}>
               <button onClick={() => viewOrderDetails(order._id)} style={amazonSecondaryBtn}>👁️ View Details</button>
-              {order.status === "delivered" && <button onClick={() => alert("Reorder coming soon!")} style={amazonReorderBtn}>🔄 Reorder</button>}
+
+              {/* 🔴 Show cancel btn only if not delivered or cancelled */}
+              {["pending", "confirmed", "preparing"].includes(order.status) && (
+                <button onClick={() => cancelOrder(order._id)} style={amazonCancelBtn}>❌ Cancel Order</button>
+              )}
+
+              {order.status === "delivered" && (
+                <button onClick={() => alert("Reorder coming soon!")} style={amazonReorderBtn}>🔄 Reorder</button>
+              )}
             </div>
 
           </div>
@@ -165,6 +188,18 @@ const amazonSecondaryBtn = {
 
 const amazonReorderBtn = {
   background: "#28a745",
+  color: "#fff",
+  border: "none",
+  padding: "8px 14px",
+  borderRadius: "6px",
+  fontWeight: "bold",
+  cursor: "pointer",
+  transition: "all 0.2s ease"
+};
+
+// 🔴 New Cancel Button style
+const amazonCancelBtn = {
+  background: "#d32f2f",
   color: "#fff",
   border: "none",
   padding: "8px 14px",
