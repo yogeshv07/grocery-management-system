@@ -70,4 +70,5 @@ const Product = require("./models/Product");
   }
 })();
 
-  
+
+app.use("/api/invoice", require("./routes/invoiceRoutes"));

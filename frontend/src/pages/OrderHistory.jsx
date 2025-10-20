@@ -9,7 +9,7 @@ export default function OrderHistory() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    document.title = "Order History";
+    document.title = "Your Orders - Grocery Store";
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) {
       navigate("/");
@@ -21,7 +21,6 @@ export default function OrderHistory() {
   const fetchOrders = async (customerId) => {
     try {
       setLoading(true);
-      setError(null);
       const res = await axios.get(`http://localhost:5000/api/orders/customer/${customerId}`);
       setOrders(res.data);
     } catch (err) {
@@ -31,19 +30,10 @@ export default function OrderHistory() {
     }
   };
 
-  // 🔴 Cancel Order function - Restores inventory automatically
   const cancelOrder = async (orderId) => {
-    if (!window.confirm("Are you sure you want to cancel this order?\n")) return;
-
+    if (!window.confirm("Cancel this order?")) return;
     try {
-      const response = await axios.put(`http://localhost:5000/api/orders/${orderId}/cancel`);
-      setOrders((prev) =>
-        prev.map((o) =>
-          o._id === orderId ? { ...o, status: "cancelled" } : o
-        )
-      );
-      
-      // Refresh orders to get updated data
+      await axios.put(`http://localhost:5000/api/orders/${orderId}/cancel`);
       const user = JSON.parse(localStorage.getItem("user"));
       if (user) fetchOrders(user._id);
     } catch (err) {
@@ -66,7 +56,7 @@ export default function OrderHistory() {
   const getStatusText = (status) => {
     switch (status) {
       case "pending": return "Order Received";
-      case "confirmed": return "Order Confirmed";
+      case "confirmed": return "Confirmed";
       case "preparing": return "Preparing";
       case "out_for_delivery": return "Out for Delivery";
       case "delivered": return "Delivered";
@@ -80,194 +70,183 @@ export default function OrderHistory() {
     navigate("/order-confirmation");
   };
 
-  if (loading) return <LoadingScreen message="Loading your orders..." />;
+  const downloadInvoice = async (orderId) => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/invoice/${orderId}/pdf`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `invoice_${orderId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+    } catch (err) {
+      alert("Failed to download invoice: " + (err.response?.data?.error || err.message));
+    }
+  };
+
+  if (loading) return <LoadingScreen message="Fetching your orders..." />;
   if (error) return <ErrorScreen message={error} />;
 
   return (
-    <div style={{ minHeight: "100vh", padding: "40px", background: "#f3f3f3", fontFamily: "'Arial', sans-serif" }}>
-      
-      {/* Header */}
-      <div style={{ maxWidth: "1100px", margin: "0 auto 40px auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
-        <h1 style={{ fontSize: "32px", fontWeight: "bold", color: "#111", margin: 0 }}>📋 Your Orders</h1>
-        <button onClick={() => navigate("/home")} style={amazonPrimaryBtn}>🏠 Back to Home</button>
+    <div style={pageContainer}>
+      <div style={headerBar}>
+        <h1 style={pageTitle}>Your Orders</h1>
+        <button onClick={() => navigate("/home")} style={primaryBtn}>🏠 Back to Home</button>
       </div>
 
-      {/* Orders List */}
-      <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "20px" }}>
-        {orders.length === 0 ? (
-          <div style={emptyOrderStyle}>
-            <div style={{ fontSize: "60px", marginBottom: "15px" }}>📦</div>
-            <h3 style={{ fontSize: "20px", fontWeight: "bold", color: "#111" }}>No orders yet</h3>
-            <p style={{ color: "#555" }}>Browse products and place your first order!</p>
-          </div>
-        ) : orders.map(order => (
-          <div key={order._id} style={orderCardStyle}>
-            
-            {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
-              <div>
-                <h2 style={{ fontSize: "18px", fontWeight: "bold", margin: "0 0 5px 0" }}>📦 #{order._id.slice(-8).toUpperCase()}</h2>
-                <p style={{ fontSize: "12px", color: "#555", margin: 0 }}>📅 {new Date(order.createdAt).toLocaleString()}</p>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{
-                  padding: "5px 10px",
-                  borderRadius: "12px",
-                  fontSize: "12px",
-                  fontWeight: "bold",
-                  color: "#fff",
-                  background: getStatusColor(order.status),
-                  display: "inline-block",
-                  marginBottom: "5px"
-                }}>
-                  {getStatusText(order.status)}
-                </span>
-                <div style={{ fontWeight: "bold", fontSize: "16px", color: "#111" }}>💰 ₹{order.totalAmount.toFixed(2)}</div>
-              </div>
-            </div>
-
-            {/* Items */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginTop: "12px" }}>
-              {order.items.map((item, i) => (
-                <div key={i} style={orderItemStyle}>
-                  {item.product && item.product.image ? (
-                    <img src={`http://localhost:5000/uploads/${item.product.image}`} alt={item.product.name} style={orderItemImageStyle} />
-                  ) : <div style={orderItemPlaceholderStyle}>{item.product ? "📦" : "❌"}</div>}
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontWeight: "500", color: "#111" }}>
-                      {item.product ? item.product.name : "Product removed"} ×{item.quantity}
-                      {!item.product && <span style={{ color: "#d32f2f", fontSize: "12px", marginLeft: "6px" }}> - Not available</span>}
-                    </span>
-                  </div>
+      {orders.length === 0 ? (
+        <div style={emptyOrderStyle}>
+          <div style={{ fontSize: "60px", marginBottom: "15px" }}>📦</div>
+          <h3 style={{ fontSize: "20px", fontWeight: "bold", color: "#111" }}>No orders yet</h3>
+          <p style={{ color: "#555" }}>Browse our products and place your first order!</p>
+        </div>
+      ) : (
+        <div style={ordersContainer}>
+          {orders.map((order) => (
+            <div key={order._id} style={orderCard}>
+              <div style={orderHeader}>
+                <div>
+                  <h2 style={orderIdText}>Order #{order._id.slice(-8).toUpperCase()}</h2>
+                  <p style={orderDate}>📅 {new Date(order.createdAt).toLocaleString()}</p>
                 </div>
-              ))}
+                <div style={{ textAlign: "right" }}>
+                  <span style={{
+                    ...statusBadge,
+                    background: getStatusColor(order.status)
+                  }}>
+                    {getStatusText(order.status)}
+                  </span>
+                  <div style={orderAmount}>💰 ₹{order.totalAmount.toFixed(2)}</div>
+                </div>
+              </div>
+
+              <div style={itemContainer}>
+                {order.items.map((item, i) => (
+                  <div key={i} style={orderItem}>
+                    {item.product?.image ? (
+                      <img src={`http://localhost:5000/uploads/${item.product.image}`} alt={item.product.name} style={itemImg} />
+                    ) : (
+                      <div style={itemPlaceholder}>📦</div>
+                    )}
+                    <div>
+                      <span style={itemName}>{item.product?.name || "Removed Product"}</span>
+                      <p style={itemQty}>Qty: {item.quantity}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={btnGroup}>
+                <button onClick={() => viewOrderDetails(order._id)} style={secondaryBtn}>👁️ View Details</button>
+                {["pending", "confirmed", "preparing"].includes(order.status) && (
+                  <button onClick={() => cancelOrder(order._id)} style={cancelBtn}>❌ Cancel Order</button>
+                )}
+                {order.status === "delivered" && (
+                  <button onClick={() => downloadInvoice(order._id)} style={primaryBtn}>⬇️ Save Invoice</button>
+                )}
+              </div>
             </div>
-
-            {/* Actions */}
-            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "12px", flexWrap: "wrap" }}>
-              <button onClick={() => viewOrderDetails(order._id)} style={amazonSecondaryBtn}>👁️ View Details</button>
-
-              {/* 🔴 Show cancel btn only if not delivered or cancelled */}
-              {["pending", "confirmed", "preparing"].includes(order.status) && (
-                <button onClick={() => cancelOrder(order._id)} style={amazonCancelBtn}>❌ Cancel Order</button>
-              )}
-
-              {order.status === "delivered" && (
-                <button onClick={() => alert("Reorder coming soon!")} style={amazonReorderBtn}>🔄 Reorder</button>
-              )}
-            </div>
-
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-// Styles
-const amazonPrimaryBtn = {
-  background: "#ff9900",
-  color: "#111",
-  border: "none",
-  padding: "10px 18px",
-  borderRadius: "6px",
-  fontWeight: "bold",
-  cursor: "pointer"
+// ✅ Amazon-like UI Styles
+const pageContainer = {
+  minHeight: "100vh",
+  padding: "40px",
+  background: "linear-gradient(180deg, #f8f8f8, #ffffff)",
+  fontFamily: "'Amazon Ember', Arial, sans-serif",
 };
 
-const amazonSecondaryBtn = {
-  background: "#0073bb",
-  color: "#fff",
-  border: "none",
-  padding: "8px 14px",
-  borderRadius: "6px",
-  fontWeight: "bold",
-  cursor: "pointer",
-  transition: "all 0.2s ease"
+const headerBar = {
+  maxWidth: "1100px",
+  margin: "0 auto 40px auto",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  flexWrap: "wrap",
 };
 
-const amazonReorderBtn = {
-  background: "#28a745",
-  color: "#fff",
-  border: "none",
-  padding: "8px 14px",
-  borderRadius: "6px",
-  fontWeight: "bold",
-  cursor: "pointer",
-  transition: "all 0.2s ease"
+const pageTitle = {
+  fontSize: "32px",
+  fontWeight: "700",
+  color: "#232f3e",
+  margin: 0,
 };
 
-// 🔴 New Cancel Button style
-const amazonCancelBtn = {
-  background: "#d32f2f",
-  color: "#fff",
-  border: "none",
-  padding: "8px 14px",
-  borderRadius: "6px",
-  fontWeight: "bold",
-  cursor: "pointer",
-  transition: "all 0.2s ease"
+const ordersContainer = {
+  maxWidth: "1100px",
+  margin: "0 auto",
+  display: "flex",
+  flexDirection: "column",
+  gap: "20px",
 };
 
-const orderCardStyle = {
+const orderCard = {
   background: "#fff",
-  borderRadius: "8px",
+  borderRadius: "10px",
   padding: "20px",
-  border: "1px solid #e0e0e0",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-  transition: "all 0.2s ease"
+  border: "1px solid #ddd",
+  boxShadow: "0 3px 10px rgba(0,0,0,0.05)",
+  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+};
+orderCard[':hover'] = {
+  transform: "translateY(-2px)",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
 };
 
-const orderItemStyle = {
+const orderHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  flexWrap: "wrap",
+  gap: "10px",
+};
+
+const orderIdText = { fontSize: "18px", fontWeight: "600", color: "#111", marginBottom: "5px" };
+const orderDate = { fontSize: "13px", color: "#555", margin: 0 };
+const orderAmount = { fontWeight: "bold", fontSize: "16px", color: "#111" };
+
+const statusBadge = {
+  padding: "6px 12px",
+  borderRadius: "16px",
+  fontSize: "12px",
+  fontWeight: "bold",
+  color: "#fff",
+  display: "inline-block",
+  marginBottom: "5px",
+};
+
+const itemContainer = { display: "flex", flexWrap: "wrap", gap: "12px", marginTop: "15px" };
+const orderItem = {
   display: "flex",
   alignItems: "center",
   padding: "8px",
   borderRadius: "6px",
   border: "1px solid #e0e0e0",
-  background: "#f9f9f9",
+  background: "#fafafa",
   gap: "10px",
   minWidth: "200px",
-  flex: "1"
+  flex: "1",
 };
+const itemImg = { width: "50px", height: "50px", borderRadius: "4px", objectFit: "cover" };
+const itemPlaceholder = { width: "50px", height: "50px", borderRadius: "4px", background: "#eee", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" };
+const itemName = { fontWeight: "500", color: "#111" };
+const itemQty = { fontSize: "12px", color: "#555", margin: 0 };
 
-const orderItemImageStyle = {
-  width: "50px",
-  height: "50px",
-  borderRadius: "4px",
-  objectFit: "cover"
-};
+const btnGroup = { display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "15px", flexWrap: "wrap" };
+const primaryBtn = { background: "#ffa41c", color: "#111", border: "none", padding: "10px 18px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" };
+const secondaryBtn = { background: "#007185", color: "#fff", border: "none", padding: "8px 14px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer" };
+const cancelBtn = { background: "#d32f2f", color: "#fff", border: "none", padding: "8px 14px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer" };
 
-const orderItemPlaceholderStyle = {
-  width: "50px",
-  height: "50px",
-  borderRadius: "4px",
-  background: "#e0e0e0",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "20px"
-};
-
-const emptyOrderStyle = {
-  textAlign: "center",
-  padding: "50px",
-  background: "#fff",
-  borderRadius: "12px",
-  border: "1px solid #e0e0e0"
-};
+const emptyOrderStyle = { textAlign: "center", padding: "50px", background: "#fff", borderRadius: "12px", border: "1px solid #e0e0e0" };
 
 function LoadingScreen({ message }) {
-  return (
-    <div style={{ minHeight: "80vh", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "20px", color: "#555" }}>
-      {message}
-    </div>
-  );
+  return <div style={{ minHeight: "80vh", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "20px", color: "#555" }}>{message}</div>;
 }
 
 function ErrorScreen({ message }) {
-  return (
-    <div style={{ minHeight: "80vh", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "18px", color: "#d32f2f" }}>
-      ⚠️ {message}
-    </div>
-  );
+  return <div style={{ minHeight: "80vh", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "18px", color: "#d32f2f" }}>⚠️ {message}</div>;
 }
