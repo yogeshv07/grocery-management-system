@@ -474,38 +474,76 @@ export default function AdminDashboard() {
                     <line x1="60" y1="20" x2="60" y2="320" stroke="#ddd" strokeWidth="2" />
                   </svg>
                   ) : (
-                  /* Enhanced 3D Bar Chart */
+                  /* Premium 3D Bar Chart */
+                  <div style={{ 
+                    position: 'relative',
+                    background: 'linear-gradient(to bottom, #FAFAFA 0%, #FFFFFF 100%)',
+                    borderRadius: '8px',
+                    padding: '20px',
+                    paddingBottom: '60px'
+                  }}>
                   <div style={{ 
                     display: 'flex', 
                     alignItems: 'flex-end', 
                     justifyContent: 'center', 
-                    height: '380px', 
-                    padding: '30px 20px', 
-                    background: 'linear-gradient(to bottom, #FAFAFA 0%, #F5F5F5 100%)',
-                    borderRadius: '8px',
-                    gap: '8px',
+                    height: '320px', 
+                    padding: '40px 60px 0px 80px', 
                     position: 'relative',
-                    overflow: 'hidden'
+                    gap: '6px',
+                    borderBottom: '2px solid #232F3E'
                   }}>
-                    {/* Y-axis grid lines */}
-                    {[0, 1, 2, 3, 4, 5].map((i) => {
-                      const y = (i / 5) * 100;
-                      return (
-                        <div key={i} style={{
-                          position: 'absolute',
-                          left: '20px',
-                          right: '20px',
-                          bottom: `${y}%`,
-                          borderTop: '1px dashed #E0E0E0',
-                          zIndex: 0
-                        }} />
-                      );
-                    })}
+                    {/* Enhanced Y-axis grid with labels */}
+                    {(() => {
+                      const maxSales = Math.max(...analytics.salesByDate.map(d => d.totalSales));
+                      const gridHeight = 320; // Match the container height
+                      return [0, 1, 2, 3, 4, 5, 6].map((i) => {
+                        const yPixels = (i / 6) * gridHeight;
+                        const value = (i / 6) * maxSales;
+                        return (
+                          <div key={i} style={{
+                            position: 'absolute',
+                            left: '0',
+                            right: '0',
+                            bottom: `${yPixels}px`,
+                            zIndex: 0,
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}>
+                            {/* Y-axis label */}
+                            <div style={{
+                              position: 'absolute',
+                              left: '10px',
+                              background: '#FFFFFF',
+                              padding: '2px 8px',
+                              borderRadius: '3px',
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              color: '#232F3E',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              zIndex: 2
+                            }}>
+                              ₹{value >= 1000 ? (value/1000).toFixed(1) + 'K' : value.toFixed(0)}
+                            </div>
+                            {/* Grid line - skip baseline since we have border-bottom */}
+                            {i > 0 && (
+                              <div style={{
+                                position: 'absolute',
+                                left: '80px',
+                                right: '20px',
+                                borderTop: '1px dashed #E0E0E0',
+                                opacity: '0.4'
+                              }} />
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
                     
                     {analytics.salesByDate.map((day, index) => {
                       const maxSales = Math.max(...analytics.salesByDate.map(d => d.totalSales));
                       const heightPercent = maxSales > 0 ? (day.totalSales / maxSales) * 100 : 0;
                       const isTopSale = day.totalSales === maxSales;
+                      const showLabel = index % Math.ceil(analytics.salesByDate.length / 10) === 0 || index === 0 || index === analytics.salesByDate.length - 1 || isTopSale;
                       
                       return (
                         <div key={index} style={{ 
@@ -513,149 +551,283 @@ export default function AdminDashboard() {
                           display: 'flex', 
                           flexDirection: 'column', 
                           alignItems: 'center', 
-                          gap: '12px',
+                          justifyContent: 'flex-end',
                           position: 'relative',
                           zIndex: 1,
-                          maxWidth: '50px'
+                          maxWidth: '45px',
+                          minWidth: '20px',
+                          height: '100%',
+                          paddingBottom: '0'
                         }}>
-                          {/* 3D Bar with enhanced styling */}
+                          {/* Premium 3D Bar with enhanced styling */}
                           <div 
+                            id={`bar-${index}`}
                             style={{
                               width: '100%',
                               height: `${heightPercent}%`,
                               background: isTopSale 
-                                ? 'linear-gradient(135deg, #FFD700 0%, #FF9900 50%, #C45500 100%)' 
-                                : 'linear-gradient(135deg, #FFD814 0%, #FF9900 50%, #F08804 100%)',
-                              borderRadius: '8px 8px 0 0',
+                                ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 30%, #FF9900 60%, #C45500 100%)' 
+                                : 'linear-gradient(135deg, #FFE599 0%, #FFD814 20%, #FF9900 60%, #F08804 100%)',
+                              borderRadius: '10px 10px 0 0',
                               position: 'relative',
                               cursor: 'pointer',
-                              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                              transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                               boxShadow: `
-                                0 -4px 12px rgba(255, 153, 0, 0.4),
-                                inset 0 2px 4px rgba(255, 255, 255, 0.5),
-                                inset 0 -2px 4px rgba(0, 0, 0, 0.2)
+                                0 -6px 16px rgba(255, 153, 0, 0.45),
+                                inset 0 3px 6px rgba(255, 255, 255, 0.6),
+                                inset 0 -3px 6px rgba(0, 0, 0, 0.25),
+                                inset 2px 0 4px rgba(255, 255, 255, 0.3)
                               `,
-                              minHeight: day.totalSales > 0 ? '15px' : '0',
+                              minHeight: day.totalSales > 0 ? '20px' : '0',
                               transformStyle: 'preserve-3d',
-                              animation: `slideUp 0.6s ease-out ${index * 0.05}s both`
+                              animation: `slideUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.04}s both`
                             }}
-                            title={`📅 ${new Date(day._id).toLocaleDateString()}\n💰 Sales: ₹${day.totalSales.toFixed(2)}\n📦 Orders: ${day.orderCount}`}
                             onMouseOver={(e) => { 
-                              e.currentTarget.style.transform = 'translateY(-10px) scale(1.08)'; 
+                              e.currentTarget.style.transform = 'translateY(-15px) scale(1.12)'; 
                               e.currentTarget.style.boxShadow = `
-                                0 -8px 20px rgba(255, 153, 0, 0.6),
-                                inset 0 2px 4px rgba(255, 255, 255, 0.6),
-                                inset 0 -2px 6px rgba(0, 0, 0, 0.3)
+                                0 -12px 28px rgba(255, 153, 0, 0.7),
+                                inset 0 4px 8px rgba(255, 255, 255, 0.7),
+                                inset 0 -4px 8px rgba(0, 0, 0, 0.3),
+                                inset 2px 0 6px rgba(255, 255, 255, 0.4)
                               `;
-                              e.currentTarget.style.zIndex = '10';
+                              e.currentTarget.style.zIndex = '100';
+                              // Show tooltip
+                              const tooltip = document.getElementById(`tooltip-${index}`);
+                              if (tooltip) {
+                                tooltip.style.display = 'block';
+                                tooltip.style.opacity = '1';
+                              }
                             }}
                             onMouseOut={(e) => { 
                               e.currentTarget.style.transform = 'translateY(0) scale(1)';
                               e.currentTarget.style.boxShadow = `
-                                0 -4px 12px rgba(255, 153, 0, 0.4),
-                                inset 0 2px 4px rgba(255, 255, 255, 0.5),
-                                inset 0 -2px 4px rgba(0, 0, 0, 0.2)
+                                0 -6px 16px rgba(255, 153, 0, 0.45),
+                                inset 0 3px 6px rgba(255, 255, 255, 0.6),
+                                inset 0 -3px 6px rgba(0, 0, 0, 0.25),
+                                inset 2px 0 4px rgba(255, 255, 255, 0.3)
                               `;
                               e.currentTarget.style.zIndex = '1';
+                              // Hide tooltip
+                              const tooltip = document.getElementById(`tooltip-${index}`);
+                              if (tooltip) {
+                                tooltip.style.display = 'none';
+                                tooltip.style.opacity = '0';
+                              }
                             }}
                           >
-                            {/* Top Cap (3D effect) */}
+                            {/* Enhanced Top Cap (3D effect) */}
                             <div style={{
                               position: 'absolute',
-                              top: '-4px',
+                              top: '-6px',
                               left: '0',
                               right: '0',
-                              height: '8px',
+                              height: '10px',
                               background: isTopSale 
-                                ? 'linear-gradient(to right, #FFE066, #FFD814)' 
-                                : 'linear-gradient(to right, #FFE599, #FFD814)',
-                              borderRadius: '8px 8px 0 0',
-                              boxShadow: '0 -2px 8px rgba(255, 153, 0, 0.5)'
+                                ? 'linear-gradient(135deg, #FFE066 0%, #FFD814 50%, #FFC107 100%)' 
+                                : 'linear-gradient(135deg, #FFF9C4 0%, #FFE599 50%, #FFD814 100%)',
+                              borderRadius: '10px 10px 0 0',
+                              boxShadow: '0 -3px 10px rgba(255, 153, 0, 0.6)',
+                              border: '1px solid rgba(255, 255, 255, 0.5)',
+                              borderBottom: 'none'
                             }} />
                             
-                            {/* Shine effect */}
+                            {/* Enhanced Shine effect */}
                             <div style={{
                               position: 'absolute',
                               top: '0',
                               left: '0',
-                              width: '35%',
+                              width: '40%',
                               height: '100%',
-                              background: 'linear-gradient(to right, rgba(255, 255, 255, 0.4), transparent)',
-                              borderRadius: '8px 0 0 0'
+                              background: 'linear-gradient(to right, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.2), transparent)',
+                              borderRadius: '10px 0 0 0',
+                              pointerEvents: 'none'
                             }} />
                             
-                            {/* Top performer star */}
+                            {/* Right edge shadow for depth */}
+                            <div style={{
+                              position: 'absolute',
+                              top: '0',
+                              right: '0',
+                              width: '15%',
+                              height: '100%',
+                              background: 'linear-gradient(to left, rgba(0, 0, 0, 0.15), transparent)',
+                              borderRadius: '0 10px 0 0',
+                              pointerEvents: 'none'
+                            }} />
+                            
+                            {/* Top performer trophy with glow */}
                             {isTopSale && (
                               <div style={{
                                 position: 'absolute',
-                                top: '-35px',
+                                top: '-50px',
                                 left: '50%',
                                 transform: 'translateX(-50%)',
-                                fontSize: '24px',
-                                animation: 'bounce 2s infinite'
+                                zIndex: 10
                               }}>
-                                🏆
+                                <div style={{
+                                  position: 'relative',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  {/* Glow effect */}
+                                  <div style={{
+                                    position: 'absolute',
+                                    width: '40px',
+                                    height: '40px',
+                                    background: 'radial-gradient(circle, rgba(255, 215, 0, 0.6), transparent)',
+                                    borderRadius: '50%',
+                                    animation: 'pulse 2s infinite',
+                                    top: '-5px',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)'
+                                  }} />
+                                  <div style={{
+                                    fontSize: '28px',
+                                    animation: 'bounce 2s infinite',
+                                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                                    position: 'relative',
+                                    zIndex: 1
+                                  }}>🏆</div>
+                                  <div style={{
+                                    fontSize: '9px',
+                                    fontWeight: '700',
+                                    color: '#FF9900',
+                                    background: '#232F3E',
+                                    padding: '2px 6px',
+                                    borderRadius: '3px',
+                                    whiteSpace: 'nowrap',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                  }}>TOP SALE</div>
+                                </div>
                               </div>
                             )}
                             
-                            {/* Value label */}
-                            {(index % Math.ceil(analytics.salesByDate.length / 8) === 0 || isTopSale) && day.totalSales > 0 && (
+                            {/* Value label for selected bars */}
+                            {showLabel && day.totalSales > 0 && !isTopSale && (
                               <div style={{ 
                                 position: 'absolute', 
-                                top: '-30px', 
+                                top: '-32px', 
                                 left: '50%', 
                                 transform: 'translateX(-50%)',
                                 fontSize: '11px',
                                 fontWeight: '700',
                                 color: '#232F3E',
                                 whiteSpace: 'nowrap',
-                                background: 'rgba(255, 255, 255, 0.95)',
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                                border: '1px solid #FFD814'
+                                background: 'linear-gradient(135deg, #FFFFFF 0%, #FFF9E6 100%)',
+                                padding: '5px 10px',
+                                borderRadius: '5px',
+                                boxShadow: '0 3px 8px rgba(0,0,0,0.18)',
+                                border: '1.5px solid #FFD814',
+                                zIndex: 2
                               }}>
-                                ₹{day.totalSales.toFixed(0)}
+                                ₹{day.totalSales >= 1000 ? (day.totalSales/1000).toFixed(1) + 'K' : day.totalSales.toFixed(0)}
                               </div>
                             )}
+                            
+                            {/* Interactive Tooltip */}
+                            <div 
+                              id={`tooltip-${index}`}
+                              style={{ 
+                                display: 'none',
+                                opacity: '0',
+                                position: 'absolute', 
+                                top: '-95px', 
+                                left: '50%', 
+                                transform: 'translateX(-50%)',
+                                background: '#232F3E',
+                                color: '#FFFFFF',
+                                padding: '10px 14px',
+                                borderRadius: '8px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                whiteSpace: 'nowrap',
+                                zIndex: 1000,
+                                transition: 'opacity 0.2s ease',
+                                pointerEvents: 'none',
+                                border: '2px solid #FF9900'
+                              }}>
+                              <div style={{ fontSize: '10px', color: '#FEBD69', fontWeight: '600', marginBottom: '4px' }}>
+                                📅 {new Date(day._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </div>
+                              <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#FFD814', marginBottom: '4px' }}>
+                                ₹{day.totalSales.toFixed(2)}
+                              </div>
+                              <div style={{ fontSize: '10px', color: '#AAB7B8', fontWeight: '500' }}>
+                                📦 {day.orderCount} {day.orderCount === 1 ? 'order' : 'orders'}
+                              </div>
+                              {/* Tooltip arrow */}
+                              <div style={{
+                                position: 'absolute',
+                                bottom: '-8px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                width: '0',
+                                height: '0',
+                                borderLeft: '8px solid transparent',
+                                borderRight: '8px solid transparent',
+                                borderTop: '8px solid #FF9900'
+                              }} />
+                            </div>
                           </div>
                           
-                          {/* Date label with better styling */}
-                          {index % Math.ceil(analytics.salesByDate.length / 8) === 0 && (
+                          {/* Date label with enhanced styling - positioned absolutely below baseline */}
+                          {showLabel && (
                             <div style={{ 
-                              fontSize: '11px', 
-                              color: '#565959',
-                              fontWeight: '600',
-                              transform: 'rotate(-30deg)',
+                              position: 'absolute',
+                              bottom: '-30px',
+                              left: '50%',
+                              transform: 'translateX(-50%) rotate(-35deg)',
+                              transformOrigin: 'center center',
+                              fontSize: '9px', 
+                              color: '#232F3E',
+                              fontWeight: '700',
                               whiteSpace: 'nowrap',
-                              marginTop: '8px',
-                              textShadow: '0 1px 2px rgba(255,255,255,0.8)'
+                              textShadow: '0 1px 2px rgba(255,255,255,0.9)',
+                              background: 'rgba(255, 255, 255, 0.9)',
+                              padding: '2px 5px',
+                              borderRadius: '3px',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                              zIndex: 10,
+                              pointerEvents: 'none'
                             }}>
-                              {new Date(day._id).getDate()}/{new Date(day._id).getMonth() + 1}
+                              {new Date(day._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </div>
                           )}
                         </div>
                       );
                     })}
                     
-                    {/* Add keyframes for animations */}
+                    {/* Enhanced keyframes for animations */}
                     <style>{`
                       @keyframes slideUp {
                         from {
                           opacity: 0;
-                          transform: translateY(20px);
+                          transform: translateY(30px) scale(0.8);
                         }
                         to {
                           opacity: 1;
-                          transform: translateY(0);
+                          transform: translateY(0) scale(1);
                         }
                       }
                       
                       @keyframes bounce {
-                        0%, 100% { transform: translateX(-50%) translateY(0); }
-                        50% { transform: translateX(-50%) translateY(-8px); }
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-10px); }
+                      }
+                      
+                      @keyframes pulse {
+                        0%, 100% { 
+                          transform: translateX(-50%) scale(1);
+                          opacity: 0.6;
+                        }
+                        50% { 
+                          transform: translateX(-50%) scale(1.3);
+                          opacity: 0.3;
+                        }
                       }
                     `}</style>
+                  </div>
                   </div>
                   )}
                 </div>
